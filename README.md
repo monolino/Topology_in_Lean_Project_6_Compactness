@@ -16,3 +16,6 @@ After following the steps above, you can remove this section from the README fil
 Today (1,12): Compactness
 Next Week: Tikhonov's Thm
 Last Week: fundamental groups
+
+## Definitions
+The folder Definitions contains all the definitions and theorems introduced and proved in Class.
