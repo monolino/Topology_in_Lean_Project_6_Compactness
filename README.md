@@ -1,16 +1,33 @@
 # Topology_in_Lean_Project_6_Compactness
 
-## GitHub configuration
+The goal of this project is to prove Heine-Borel and the extreme value theorem.
 
-To set up your new GitHub repository, follow these steps:
+```
+Heine Borel
+Subsets of R^n are compact iff they are closed and bounded.
+```
+What we will need for Heine Borel:
+- Compactness.lean => TopologicalSpaces.lean, ContinuousFunctions.lean, Filters.lean => MetricSpaces.lean => Bases.lean
+- Bolzano-Weierstrass (Jede beschränkte Folge auf R^n hat eine convergente Teilfolge)
+- folgencompakt
+- closed
+- bounded
 
-* Under your repository name, click **Settings**.
-* In the **Actions** section of the sidebar, click "General".
-* Check the box **Allow GitHub Actions to create and approve pull requests**.
-* Click the **Pages** section of the settings sidebar.
-* In the **Source** dropdown menu, select "GitHub Actions".
+```
+Corollary (Extreme value theorem):
+f : R^n -> R continuous and K is a compact subset of R^n then
+exists x in K s.t. for any y in K f(y) <= f(x)
+```
 
-After following the steps above, you can remove this section from the README file.
+What we will need for Extreme value theorem:
+- ContinuousFunctions.lean, Compactness.lean => TopologicalSpaces.lean
+
+What we don't need up to now:
+- Connectedness.lean
+
+
+
+
 
 ## Remainder
 Today (1,12): Compactness
