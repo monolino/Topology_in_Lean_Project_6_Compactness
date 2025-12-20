@@ -8,8 +8,9 @@ Subsets of R^n are compact iff they are closed and bounded.
 ```
 What we will need for Heine Borel:
 - Compactness.lean => TopologicalSpaces.lean, ContinuousFunctions.lean, Filters.lean => MetricSpaces.lean => Bases.lean
-- Bolzano-Weierstrass (Jede beschränkte Folge auf R^n hat eine convergente Teilfolge)
-- folgencompakt
+- Hausdorff
+- subcover
+- tychonoff theorem
 - closed
 - bounded
 
