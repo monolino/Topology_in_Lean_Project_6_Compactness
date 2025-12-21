@@ -40,6 +40,18 @@ theorem upward_closed (hA : A ∈ F) (hAB : A ⊆ B) : B ∈ F :=
 theorem inter_mem (hA : A ∈ F) (hB : B ∈ F) : A ∩ B ∈ F :=
   F.inter_Sets hA hB
 
+theorem inter_mem_finite_sInter (C : Set (Set X)) (fin : C.Finite) :
+  (∀ c ∈ C, c ∈ F) → ⋂₀ C ∈ F := by
+    refine Set.Finite.induction_on C fin ?base ?step
+    case base =>
+      simp only [Set.mem_empty_iff_false, IsEmpty.forall_iff,
+      implies_true, Set.sInter_empty, univ_mem]
+    case step =>
+      intro s S s_nin_S fin_S hS
+      simp only [Set.mem_insert_iff, forall_eq_or_imp, Set.sInter_insert, and_imp]
+      intro s_in_F h
+      exact inter_mem s_in_F (hS h)
+
 def principalFilter (S : Set X) : Filter X where
   Sets := { T | S ⊆ T }
   univ_Sets := Set.subset_univ S
@@ -48,9 +60,30 @@ def principalFilter (S : Set X) : Filter X where
 
 def properFilter (F : Filter X) : Prop := ∅ ∉ F
 
+def maxFilter (F : Filter X) : Prop := properFilter F ∧ ∀ G : Filter X, properFilter G ∧ F.Sets ⊆ G.Sets → F = G
+
 def ultraFilter (F : Filter X) : Prop := properFilter F ∧ ∀ A, A ∈ F ∨ Aᶜ ∈ F
 
+theorem ultra_iff_max {F : Filter X} : ultraFilter F ↔ maxFilter F := by sorry
+
 def primeFilter (F : Filter X) : Prop := properFilter F ∧ ∀ R S, R ∪ S ∈ F → R ∈ F ∨ S ∈ F
+
+theorem prime_finite_sUnion {F : Filter X} {C : Set (Set X)} (p : primeFilter F) (fin : C.Finite) :
+  ⋃₀ C ∈ F → ∃ c ∈ C, c ∈ F := by
+    refine Set.Finite.induction_on C fin ?base ?step
+    case base =>
+      simp only [Set.sUnion_empty, Set.mem_empty_iff_false,
+      false_and, exists_const, imp_false]
+      exact p.1
+    case step =>
+      intro s S s_nin_S fin_S hS h
+      simp only [Set.sUnion_insert] at h
+      simp only [Set.mem_insert_iff, exists_eq_or_imp]
+      rw [primeFilter] at p
+      apply p.2 s (⋃₀ S) at h
+      obtain c1 | c2 := h
+      case inl => left; exact c1
+      case inr => right; exact hS c2
 
 theorem ultra_iff_prime {F : Filter X} : ultraFilter F ↔ primeFilter F := by sorry
 
@@ -66,7 +99,25 @@ def mapFilter (f : X → Y) (F : Filter X) : Filter Y where
     exact upward_closed hA w
   inter_Sets := inter_mem
 
-theorem mapFilter_ultra (f : X → Y) (F : Filter X) : ultraFilter F → ultraFilter (mapFilter f F) := by sorry
+@[simp]
+theorem mem_mapFilter (f : X → Y) (F : Filter X) (s : Set Y) :
+  s ∈ mapFilter f F ↔ (f ⁻¹' s) ∈ F := by
+  trivial
+
+theorem mapFilter_prime (f : X → Y) (F : Filter X) : primeFilter F → primeFilter (mapFilter f F) := by
+  intro prime_F
+  rw [primeFilter]
+  constructor
+  case left =>
+    rw [properFilter]
+    simp only [mem_mapFilter, Set.preimage_empty]
+    exact prime_F.1
+  case right =>
+    intro R S
+    simp only [mem_mapFilter, Set.preimage_union]
+    intro h
+    apply prime_F.2
+    exact h
 
 def neighborhoods [Topology X] (x : X) : Set (Set X) := {U | Nbhd U x}
 

@@ -230,6 +230,21 @@ instance Product_productTopology (X : Type u) [TX : Topology X] (Y : Type u) [TY
   char_Product := by
     sorry
 
+def iProductBasis {I : Type u} (Xs : I → Type u) (TXs : (i : I) → Topology (Xs i)) :
+  Basis (Π i, Xs i) where
+    Basics := { B : Set (Π i, Xs i) |
+      ∃ (V : Set (Set (Π i, Xs i))),
+      B = ⋂₀ V ∧
+      V.Finite ∧
+      ∀ v ∈ V, ∃ (i : I) (U : Set (Xs i)), v = (fun x ↦ x i) ⁻¹' U ∧ Open U}
+    Basis_cover := sorry
+    Basis_inter := sorry
+
+instance iProductTopology {I : Type u} (Xs : I → Type u) (TXs : (i : I) → Topology (Xs i)) :
+  Topology (Π i, Xs i) :=
+  @basisTopology (Π i, Xs i) (iProductBasis Xs TXs)
+
+
 
 /- # Coproduct Spaces -/
 

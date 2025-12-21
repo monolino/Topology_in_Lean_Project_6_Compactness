@@ -2,6 +2,7 @@ import Mathlib.Tactic
 import TopologyInLeanProject6Compactness.Definitions.TopologicalSpaces
 import TopologyInLeanProject6Compactness.Definitions.ContinuousFunctions
 import TopologyInLeanProject6Compactness.Definitions.Filters
+import TopologyInLeanProject6Compactness.Definitions.NewSpaces
 
 universe u
 
@@ -74,7 +75,7 @@ theorem Compact_image (f : X → Y) (cont_f : Cont f) (surj_f : Function.Surject
     rw [← hc2]
     exact hc1
 
-theorem Compact_Closed_of_Compact {W : Type u} [Topology W]
+theorem Compact_Closed_of_Compact
   (compact_X : Compact (Set.univ : Set X)) (K : Set X) (closed_K : Closed K) : Compact K := by
   intro C
   let D : openCover (Set.univ : Set X) := by
@@ -149,12 +150,18 @@ theorem Compact_iff_Closed_finite_inter :
     rw [Compact]; push_neg
     let U : openCover (Set.univ : Set X) := by
       constructor
-      case Cover => exact (fun c ↦ cᶜ) '' C
-      case Open_cover => sorry
-      case Is_cover => sorry
+      case Cover => exact compl '' C
+      case Open_cover =>
+        intro s hs
+        rw [Set.mem_image] at hs
+        obtain ⟨c,hc⟩ := hs
+        rw [←hc.2]
+        exact closed_C c hc.1
+      case Is_cover =>
+        rw [← @Set.compl_sInter, empty_inter_C, Set.compl_empty]
     use U
-    intro F fin_F
-    let D := (fun c ↦ cᶜ) '' F.Cover
+    intro F fin_F F_sub_U
+    let D := compl '' F.Cover
     have w1 : ¬ (⋂₀ D).Nonempty := by
       have z : Set.univ = ⋃₀ F.Cover := by
         rw [Set.Subset.antisymm_iff]
@@ -165,8 +172,13 @@ theorem Compact_iff_Closed_finite_inter :
       rw [← @Set.compl_sUnion, ← z]
       simp only [Set.compl_univ, Set.not_nonempty_empty, not_false_eq_true]
     have w2 : (⋂₀ D).Nonempty := by
-      have z1 : D ⊆ C := by sorry
-      have z2 : D.Finite := by sorry
+      have z1 : D ⊆ C := by
+        unfold D
+        rw [Set.image_subset_iff, ← @Set.compl_image]
+        exact F_sub_U
+      have z2 : D.Finite := by
+        unfold D
+        exact Set.Finite.image compl fin_F
       apply fip_C D ⟨z1,z2⟩
     contradiction
   case mpr =>
@@ -174,17 +186,184 @@ theorem Compact_iff_Closed_finite_inter :
     intro h
     rw [Compact] at h; push_neg at h
     obtain ⟨C, hC⟩ := h
-    sorry
+    let D := compl '' C.Cover
+    have w1 : Closed_collection D := by
+      intro d hd
+      change d ∈ compl '' C.Cover at hd
+      simp only [Set.mem_image] at hd
+      obtain ⟨c,hc1,hc2⟩ := hd
+      rw [← hc2]
+      simp only [Closed, compl_compl]
+      exact C.Open_cover c hc1
+    have w2 : finite_inter D := by
+      intro S ⟨S_sub_D,fin_S⟩
+      by_contra! c
+      let F : openCover (Set.univ : Set X) := by
+        constructor
+        case Cover => exact compl '' S
+        case Open_cover =>
+          intro s hs
+          rw [Set.mem_compl_image] at hs
+          apply S_sub_D at hs
+          unfold D at hs
+          simp only [Set.mem_image, compl_inj_iff, exists_eq_right] at hs
+          exact C.Open_cover s hs
+        case Is_cover =>
+          rw [← @Set.compl_sInter, c, Set.compl_empty]
+      have fin_F : F.Cover.Finite := by
+        change (compl '' S).Finite
+        exact Set.Finite.image compl fin_S
+      have subcover : subCover F C := by
+        rw [subCover]
+        change compl '' S ⊆ C.Cover
+        rw [@Set.image_subset_iff, ← @Set.compl_image]
+        exact S_sub_D
+      specialize hC F fin_F
+      contradiction
+    have w3 : ⋂₀ D = ∅ := by
+      unfold D
+      have cover : ⋃₀ C.Cover = Set.univ := by
+        rw [← Set.univ_subset_iff]
+        exact C.Is_cover
+      rw [← Set.compl_sUnion, cover, Set.compl_empty_iff]
+    use D
 
 open MyFilter
 
-def filterCompact (X : Type u) [Topology X] := ∀ (F : MyFilter.Filter X), primeFilter F → ∃ x, F lim x
+theorem prime_extension (C : Set (Set X)) (fin_inter : finite_inter C) :
+∃ F : MyFilter.Filter X, primeFilter F ∧ C ⊆ F.Sets := by
+  sorry
+
+def filterCompact (X : Type u) [Topology X] :=
+  ∀ (F : MyFilter.Filter X), primeFilter F → ∃ x, F lim x
 
 theorem filterCompact_iff_Compact (X : Type u) [Topology X] :
-  filterCompact X ↔ Compact (Set.univ : Set X) := by sorry
+  filterCompact X ↔ Compact (Set.univ : Set X) := by
+  constructor
+  case mp =>
+    rw [Compact_iff_Closed_finite_inter]
+    contrapose!
+    intro h
+    obtain ⟨C,⟨closed_C,fin_inter_C⟩,inter_empty⟩ := h
+    obtain ⟨F,prime_F, C_sub_F⟩ := prime_extension C fin_inter_C
+    intro filter_compact
+    specialize filter_compact F prime_F
+    obtain ⟨x,F_lim_x⟩ := filter_compact
+    have w2 : ∀ x, ∃ s ∈ C, x ∉ s := by
+      intro y
+      by_contra! c
+      rw [← Set.mem_sInter] at c
+      rw [inter_empty] at c
+      contradiction
+    obtain ⟨s,s_in_C, x_nin_s⟩ := w2 x
+    have sc_nbhd : Nbhd sᶜ x := by
+      constructor
+      case left =>
+        rw [← Closed]
+        apply closed_C
+        exact s_in_C
+      case right =>
+        exact x_nin_s
+    apply F_lim_x at sc_nbhd
+    apply C_sub_F at s_in_C
+    have np : ∅ ∈ F.Sets := by
+      rw [← Set.inter_compl_self s]
+      exact inter_mem s_in_C sc_nbhd
+    have p : ∅ ∉ F.Sets := by
+      exact prime_F.1
+    contradiction
+  case mpr =>
+    intro compact
+    rw [filterCompact]
+    by_contra! c
+    obtain ⟨F,prime_F,no_lim_F⟩ := c
+    have w : ∀ x, ∃ U, Nbhd U x ∧ U ∉ F.Sets := by
+      intro x
+      specialize no_lim_F x
+      rw [filter_convergence] at no_lim_F
+      by_contra! c
+      contradiction
+    choose U hU using w
+    let C : openCover (Set.univ : Set X) := by
+      constructor
+      case Cover => exact ⋃ x, {U x}
+      case Open_cover =>
+        intro s hs
+        simp only [Set.iUnion_singleton_eq_range, Set.mem_range] at hs
+        obtain ⟨y,hy⟩ := hs
+        rw [← hy]
+        exact (hU y).1.1
+      case Is_cover =>
+        intro y hy
+        simp only [Set.iUnion_singleton_eq_range, Set.sUnion_range, Set.mem_iUnion]
+        use y
+        exact (hU y).1.2
+    obtain ⟨G,fin_G, G_sub_C⟩ := compact C
+    have w1 : ⋃₀ G.Cover = Set.univ := by
+      rw [← Set.univ_subset_iff]
+      exact G.Is_cover
+    have w2 : ⋃₀ G.Cover ∈ F := by
+      rw [w1]; exact univ_mem
+    apply prime_finite_sUnion prime_F fin_G at w2
+    obtain ⟨c,hc1,hc2⟩ := w2
+    apply G_sub_C at hc1
+    change c ∈ ⋃ x, {U x} at hc1
+    simp at hc1
+    obtain ⟨y,hy⟩ := hc1
+    rw [← hy] at hc2
+    specialize hU y
+    apply hU.2
+    exact hc2
+
+open Constructions
 
 /- Tychonov's theorem -/
-
+theorem filterCompact_iProduct {I : Type u} (Xs : I → Type u) (TXs : (i : I) → Topology (Xs i)) :
+  (∀ i, @filterCompact (Xs i) (TXs i)) →
+  @filterCompact (Π i, Xs i) (iProductTopology Xs TXs) := by
+    intro h F prime_F
+    let pi := fun (i : I) (x : Π i, Xs i) ↦ x i
+    have w1 : ∀ (i : I), ∃ x : Xs i, mapFilter (pi i) F lim x := by
+      intro i
+      apply h i
+      exact mapFilter_prime (pi i) F prime_F
+    choose l hl using w1
+    use l
+    intro U nbhd_U
+    have z : ∃ (V : Set (Set (Π i, Xs i))),
+      ⋂₀ V ⊆ U ∧
+      V.Finite ∧
+      ∀ v ∈ V, ∃ (i : I) (W : Set (Xs i)), v = (pi i) ⁻¹' W ∧ Open W ∧ (l i) ∈ W
+      := by
+        obtain ⟨B,hB1,hB2,hB3⟩ := nbhd_U.1 l nbhd_U.2
+        obtain ⟨V,hV1,hV2,hV3⟩ := hB1
+        rw [hV1] at hB3
+        use V
+        refine ⟨hB3,hV2,?_⟩
+        intro v hV
+        obtain ⟨i,W,hiW⟩ := hV3 v hV
+        use i; use W
+        refine ⟨hiW.1, hiW.2, ?_⟩
+        change l ∈ (pi i) ⁻¹' W
+        rw [← hiW.1]
+        have z : B ⊆ v := by
+          rw [hV1]
+          intro y hy
+          rw [Set.mem_sInter] at hy
+          exact hy v hV
+        apply z
+        exact hB2
+    obtain ⟨V,hV1,hV2,hV3⟩ := z
+    refine upward_closed ?_ hV1
+    apply inter_mem_finite_sInter V hV2
+    intro v hv
+    specialize hV3 v hv
+    obtain ⟨i,W,hiW1,hiW2,hiW3⟩ := hV3
+    simp only [mapFilter, filter_convergence] at hl
+    rw [hiW1]
+    apply hl
+    rw [neighborhoods]
+    exact ⟨hiW2,hiW3⟩
 
 /- This section shows a alternate attempt to define the concepts using indexed collections of sets.
 This approach does not seem to allow easy extension of covers. -/
