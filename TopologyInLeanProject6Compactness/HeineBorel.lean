@@ -1,6 +1,7 @@
 import TopologyInLeanProject6Compactness.Definitions.Compactness
 import TopologyInLeanProject6Compactness.Definitions.MetricSpaces
 
+open Classical in
 
 def Rn (n : ℕ) : Type := (Fin n → ℝ)
 
@@ -64,12 +65,7 @@ noncomputable def Rn_topology (n : ℕ) : Topology (Rn n) :=
     exact ⟨U, hUinS, hUprop y hy⟩
 }
 
-
-
-
 def Bounded (K : Set (Rn n)) : Prop := ∃ (r : ℝ) (hr : r > 0) (x₀ : Rn n), ∀ x ∈ K, dist x x₀ < r
-
-
 
 theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bounded K := by
   constructor
@@ -77,7 +73,6 @@ theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bound
     intro comp
     constructor
     case right =>
-      rw[Bounded]
       --open Cover of balls with radius 1 around each point in K
       let U : Set (Set (Rn n)) := { s | ∃ x ∈ K, s = Metric.ball (x : Rn n) 1 }
       have U_openCover : openCover K := {
@@ -99,7 +94,23 @@ theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bound
             rw[distZero]
             linarith
       }
+      rw[Compact] at comp
+      specialize comp U_openCover
+      rcases comp with ⟨F, hFfin, hsub⟩
+      rw[subCover] at hsub
+      rw[Bounded]
+      use 1
+      have hr : (1 : ℝ) > 0 := by
+        linarith
+      use hr
+      rw [Set.finite_def] at hFfin
+      --let s0 : Set (Rn n) := Nonempty.some (hFfin) --take element out of nonempty
       sorry
+
+
+
+
+
     case left =>
       sorry
   case mpr =>
