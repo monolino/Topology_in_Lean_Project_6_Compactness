@@ -79,9 +79,26 @@ theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bound
     case right =>
       rw[Bounded]
       --open Cover of balls with radius 1 around each point in K
-      let U : K → Set (Rn n) := λ x ↦ Metric.ball x 1
-      have U_openCover : @openCover (Rn n) (Rn_topology n) K := by
-        sorry
+      let U : Set (Set (Rn n)) := { s | ∃ x ∈ K, s = Metric.ball (x : Rn n) 1 }
+      have U_openCover : openCover K := {
+        Cover := U,
+        Open_cover := by
+          intro s hs
+          rcases hs with ⟨ x, hxK, rfl⟩
+          apply Open_Basics
+          exact Basic_balls
+        Is_cover := by
+          intro x hx
+          apply Set.mem_sUnion.mpr
+          use Metric.ball x 1
+          constructor
+          · use x
+          · rw[Metric.ball]
+            rw [@Set.mem_setOf_eq]
+            have distZero : dist x x = 0 := dist_self x
+            rw[distZero]
+            linarith
+      }
       sorry
     case left =>
       sorry
