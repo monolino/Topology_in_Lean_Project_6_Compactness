@@ -188,7 +188,7 @@ theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bound
       have hbx_nbhd : Nbhd bx x := by
         rw[Nbhd]
         constructor
-        · sorry --infinite intersection??
+        · sorry
         · unfold bx
           rw [@Set.mem_sInter]
           intro k hk
@@ -207,7 +207,8 @@ theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bound
         rcases hsF_def with ⟨y, hyK, U, hUx, hsy, hU_s_empty⟩
         have hU_mem : U ∈ {U | ∃ s ∈ t.Cover, ∃ y ∈ K, Nbhd U x ∧ Nbhd s y ∧ U ∩ s = ∅} := by
           exact ⟨s, hs_t, y, hyK, hUx, hsy, hU_s_empty⟩
-        have hz_all : ∀ V ∈ {U | ∃ s ∈ t.Cover, ∃ y ∈ K, Nbhd V x ∧ Nbhd s y ∧ V ∩ s = ∅}, z ∈ V := by
+        have hz_all : ∀ V ∈ {U | ∃ s ∈ t.Cover, ∃ y ∈ K,
+            Nbhd V x ∧ Nbhd s y ∧ V ∩ s = ∅}, z ∈ V := by
           simpa [bx] using hzbx
         have hzU : z ∈ U := hz_all U hU_mem
         have hz_in_inter : z ∈ U ∩ s := ⟨hzU, hz_in_s⟩
@@ -229,4 +230,26 @@ theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bound
         exact hz
       exact ⟨ hB_basic, hxB, hBK⟩
   case mpr =>
-    sorry
+    intro h
+    rcases h with ⟨hClosed, hBounded⟩ -- split hypothesis into two parts, prove them seperately
+    rcases hBounded with ⟨r, hr, x₀, hx⟩
+    let a : Rn n := fun i => x₀ i - r
+    let b : Rn n := fun i => x₀ i + r
+    have hKsubset : K ⊆ box a b := by
+      intro x hxK i
+  -- use hx x hxK and translate dist bound to coordinate bounds
+
+
+    -- FROM AI: weiss nöd gnau wie wiiter, basically die beide hypothesis prove
+    -- Step 1: use boundedness to find a bounding box
+    rcases exists_box_of_bounded (K := K) hBounded with ⟨a, b, hKsubset⟩
+
+    -- Step 2: the box itself is compact (Tychonoff on intervals)
+    have hBoxCompact : Compact (box a b) :=
+      compact_box a b
+
+    -- Step 3: K is a closed subset of a compact set ⇒ K is compact
+    have hKcompact : Compact K :=
+      Compact_closed_subset_of_subset hBoxCompact hClosed hKsubset
+
+    exact hKcompact

@@ -162,4 +162,26 @@ theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bound
       have h_hausdorff : @Hausdorff (X?) (Rn_topology n) (Rn n) :=  sorry
 
   case mpr =>
-    sorry
+    intro h
+    rcases h with ⟨hClosed, hBounded⟩ -- split hypothesis into two parts, prove them seperately
+    rcases hBounded with ⟨r, hr, x₀, hx⟩
+    let a : Rn n := fun i => x₀ i - r
+    let b : Rn n := fun i => x₀ i + r
+    have hKsubset : K ⊆ box a b := by
+      intro x hxK i
+  -- use hx x hxK and translate dist bound to coordinate bounds
+
+
+    -- FROM AI: weiss nöd gnau wie wiiter, basically die beide hypothesis prove
+    -- Step 1: use boundedness to find a bounding box
+    rcases exists_box_of_bounded (K := K) hBounded with ⟨a, b, hKsubset⟩
+
+    -- Step 2: the box itself is compact (Tychonoff on intervals)
+    have hBoxCompact : Compact (box a b) :=
+      compact_box a b
+
+    -- Step 3: K is a closed subset of a compact set ⇒ K is compact
+    have hKcompact : Compact K :=
+      Compact_closed_subset_of_subset hBoxCompact hClosed hKsubset
+
+    exact hKcompact
