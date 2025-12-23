@@ -2,7 +2,7 @@ import Mathlib.Tactic
 import TopologyInLeanProject6Compactness.Definitions.TopologicalSpaces
 import TopologyInLeanProject6Compactness.Definitions.Bases
 
-
+open Course
 /-
 Let Top(X,Y) := {f : X → Y | f continuous} denote the set of continuous maps from X to Y.
 

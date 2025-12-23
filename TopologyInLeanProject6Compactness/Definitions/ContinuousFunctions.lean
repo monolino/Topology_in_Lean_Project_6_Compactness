@@ -1,5 +1,7 @@
 import TopologyInLeanProject6Compactness.Definitions.TopologicalSpaces
 
+namespace Course
+
 open Set
 
 universe u v w
@@ -144,5 +146,6 @@ theorem bij_OpenMap_iff_ClosedMap (bij_f : Function.Bijective f) : OpenMap f ↔
     rw [Set.image_compl_eq bij_f] at closed_Uc
     simp only [Closed, compl_compl] at closed_Uc
     exact closed_Uc
-
 end
+
+end Course

@@ -4,6 +4,7 @@ import TopologyInLeanProject6Compactness.Definitions.ContinuousFunctions
 
 universe u v
 open Set
+open Course
 
 class Basis (X : Type u) : Type u where
   Basics : Set (Set X)

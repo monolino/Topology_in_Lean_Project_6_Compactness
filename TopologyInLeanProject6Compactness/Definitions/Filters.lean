@@ -2,6 +2,7 @@ import Mathlib.Tactic
 import TopologyInLeanProject6Compactness.Definitions.TopologicalSpaces
 import TopologyInLeanProject6Compactness.Definitions.MetricSpaces
 
+open Course
 namespace MyFilter
 
 structure Filter (X : Type*) where

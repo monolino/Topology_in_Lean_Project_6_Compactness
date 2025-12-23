@@ -2,6 +2,7 @@ import Mathlib.Tactic
 import TopologyInLeanProject6Compactness.Definitions.TopologicalSpaces
 import TopologyInLeanProject6Compactness.Definitions.Bases
 
+namespace Course
 universe u v
 variable {X : Type u} [MetricSpace X]
 
@@ -150,3 +151,5 @@ theorem Hausdorff_metricTopology : @Hausdorff X metricTopology := by
         rw [w3]
         apply add_lt_add hzx hzy
       linarith
+
+end Course

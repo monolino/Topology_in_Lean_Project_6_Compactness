@@ -4,6 +4,8 @@ import TopologyInLeanProject6Compactness.Definitions.ContinuousFunctions
 import TopologyInLeanProject6Compactness.Definitions.Filters
 import TopologyInLeanProject6Compactness.Definitions.NewSpaces
 
+open Course
+
 universe u
 
 structure openCover {X : Type u} [Topology X] (K : Set X) where

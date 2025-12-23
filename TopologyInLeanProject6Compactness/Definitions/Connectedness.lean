@@ -5,6 +5,7 @@ import TopologyInLeanProject6Compactness.Definitions.MetricSpaces
 import TopologyInLeanProject6Compactness.Definitions.Bases
 import TopologyInLeanProject6Compactness.Definitions.NewSpaces
 
+open Course
 namespace MyConnected
 
 variable {X Y : Type*} [Topology X] [Topology Y]
