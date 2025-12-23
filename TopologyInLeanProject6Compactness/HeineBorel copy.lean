@@ -27,8 +27,6 @@ lemma Open_finite_iInter
   (hU : ∀ s, Open (U s)) :
   Open (⋂ s, U s) := sorry
 
-
-
 theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bounded n K := by
   constructor
   case mp =>
@@ -196,7 +194,14 @@ theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bound
       specialize comp F_openCover
       rcases comp with ⟨ t, ht, ht_sub⟩
       have h_sep_cover : ∀ s : t.Cover, ∃ y ∈ K, ∃ U, Nbhd U x ∧ Nbhd (s : Set (Rn n)) y ∧ U ∩ s = ∅ := by
-        sorry
+        intro s
+        have hsF : (↑s : Set (Rn n)) ∈ F := by
+          have hs_t : (↑s : Set (Rn n)) ∈ t.Cover := s.property
+          rw[subCover] at ht_sub
+          rw[Set.subset_def] at ht_sub
+          simpa using ht_sub (↑s) hs_t
+        rcases hsF with ⟨y, hyK, U, hUx, hsy, hU_s_empty⟩
+        exact ⟨y, hyK, U, hUx, hsy, hU_s_empty⟩
       choose y hyK U hUx hsy hU_s_empty using h_sep_cover
       let bx : Set (Rn n) := ⋂ s : t.Cover, U s
       --let bx := ⋂₀ {U | ∃ s ∈ t.Cover, ∃ y ∈ K, Nbhd U x ∧ Nbhd s y ∧ U ∩ s = ∅}
