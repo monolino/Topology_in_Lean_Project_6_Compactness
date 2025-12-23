@@ -8,7 +8,10 @@ open Classical in
 open Finset
 open Course
 
+universe u
+
 variable (n : ℕ)
+variable {X : Type u} {Y : Type v} [Topology X] [Topology Y] {s t : Set X}
 
 abbrev Rn (n : ℕ) : Type := (Fin n → ℝ)
 
@@ -16,6 +19,15 @@ abbrev Rn (n : ℕ) : Type := (Fin n → ℝ)
 #check (inferInstance : TopologicalSpace (Rn n))
 
 def Bounded (K : Set (Rn n)) : Prop := ∃ (r : ℝ) (hr : r > 0) (x₀ : Rn n), ∀ x ∈ K, dist x x₀ < r
+
+lemma Open_finite_iInter
+  {α : Type u} {X : Type u} [Topology X]
+  (S : Set α) (hS : S.Finite)
+  (U : {a // a ∈ S} → Set X)
+  (hU : ∀ s, Open (U s)) :
+  Open (⋂ s, U s) := sorry
+
+
 
 theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bounded n K := by
   constructor
@@ -115,7 +127,6 @@ theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bound
           apply lt_of_lt_of_le
           · apply zero_lt_one
           exact Finset.le_sup'_of_le (fun y ↦ dist y x + 1) hy h_fun
-
         use hr
         use x
         intro x₀ hx₀
@@ -184,36 +195,44 @@ theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bound
       rw[Compact] at comp
       specialize comp F_openCover
       rcases comp with ⟨ t, ht, ht_sub⟩
-      let bx := ⋂₀ {U | ∃ s ∈ t.Cover, ∃ y ∈ K, Nbhd U x ∧ Nbhd s y ∧ U ∩ s = ∅}
+      have h_sep_cover : ∀ s : t.Cover, ∃ y ∈ K, ∃ U, Nbhd U x ∧ Nbhd (s : Set (Rn n)) y ∧ U ∩ s = ∅ := by
+        sorry
+      choose y hyK U hUx hsy hU_s_empty using h_sep_cover
+      let bx : Set (Rn n) := ⋂ s : t.Cover, U s
+      --let bx := ⋂₀ {U | ∃ s ∈ t.Cover, ∃ y ∈ K, Nbhd U x ∧ Nbhd s y ∧ U ∩ s = ∅}
       have hbx_nbhd : Nbhd bx x := by
         rw[Nbhd]
         constructor
-        · sorry
+        · have hU_open : ∀ s : ↑t.Cover, Open (U s) := by
+            intro s
+            have hs := hUx s
+            rcases hs with ⟨hs_open, _hx_in_U⟩
+            exact hs_open
+          have h := Open_finite_iInter (S := t.Cover) (hS := ht) (U := fun s => U s) (hU := fun s => hU_open s)
+          exact h
         · unfold bx
-          rw [@Set.mem_sInter]
-          intro k hk
-          rw[Set.mem_setOf] at hk
-          obtain ⟨ s, hs,l,hl,h_nbhdkx, h_nbhdsl,hks_empty⟩ := hk
-          rcases h_nbhdkx with ⟨hk_open, hxk⟩
-          exact hxk
+          intro s hs
+          rcases hs with ⟨c, rfl⟩
+          specialize hUx c
+          rw[Nbhd] at hUx
+          obtain ⟨ hcopen, hcx⟩ := hUx
+          exact hcx
       have hbx_Kc   : bx ⊆ Kᶜ := by
         rw[Set.subset_def]
         intro z hzbx hzK
-        have hzUnion : z ∈ ⋃₀ t.Cover := t.Is_cover hzK
-        rcases hzUnion with ⟨s, hs_t, hz_in_s⟩
-        have hsF : s ∈ F := ht_sub hs_t
-        have hsF_def : ∃ y ∈ K, ∃ U, Nbhd U x ∧ Nbhd s y ∧ U ∩ s = ∅ := by
-          simpa [F] using hsF
-        rcases hsF_def with ⟨y, hyK, U, hUx, hsy, hU_s_empty⟩
-        have hU_mem : U ∈ {U | ∃ s ∈ t.Cover, ∃ y ∈ K, Nbhd U x ∧ Nbhd s y ∧ U ∩ s = ∅} := by
-          exact ⟨s, hs_t, y, hyK, hUx, hsy, hU_s_empty⟩
-        have hz_all : ∀ V ∈ {U | ∃ s ∈ t.Cover, ∃ y ∈ K,
-            Nbhd V x ∧ Nbhd s y ∧ V ∩ s = ∅}, z ∈ V := by
+        obtain ⟨s, hs_t, hz_in_s⟩ := t.Is_cover hzK
+        let s0 : ↑t.Cover := ⟨s, hs_t⟩
+        have hz_all : z ∈ ⋂ s : ↑t.Cover, U s := by
           simpa [bx] using hzbx
-        have hzU : z ∈ U := hz_all U hU_mem
-        have hz_in_inter : z ∈ U ∩ s := ⟨hzU, hz_in_s⟩
+        have hzU_all : ∀ s : ↑t.Cover, z ∈ U s := Set.mem_iInter.mp hz_all
+        have hz_in_Us0 : z ∈ U s0 := hzU_all s0
+        have hz_in_inter : z ∈ U s0 ∩ (↑s0 : Set (Rn n)) := by --z in intersection
+          refine And.intro hz_in_Us0 ?_
+          simpa [s0] using hz_in_s
+        have h_empty : U s0 ∩ (↑s0 : Set (Rn n)) = (∅ : Set (Rn n)) := hU_s_empty s0
         have : z ∈ (∅ : Set (Rn n)) := by
-          simpa [hU_s_empty] using hz_in_inter
+          rw[h_empty] at hz_in_inter
+          exact hz_in_inter
         exact this.elim
       rw[Nbhd] at hbx_nbhd
       rcases hbx_nbhd with ⟨b, hb⟩
