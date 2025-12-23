@@ -108,8 +108,56 @@ theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bound
         intro x hx
         cases hx
     case left =>
-      have h_hausdorff : Hausdorff (X := Rn n) :=  sorry
-      sorry
-
+      have h_hausdorff : Hausdorff (X := Rn n) := Hausdorff_metricTopology
+      rw[Closed]
+      intro x hx
+      have h_sep : ∀ y ∈ K, ∃ U V, Nbhd U x ∧ Nbhd V y ∧ U ∩ V = ∅ := by
+        intro y hy
+        have hxy : x ≠ y := by
+          intro h
+          apply hx
+          simpa [h] using hy
+        simpa using h_hausdorff x y hxy
+      let F : Set (Set (Rn n)) := {V | ∃ y ∈ K, ∃ U, Nbhd U x ∧ Nbhd V y ∧ U ∩ V = ∅} --cover of K
+      let F_openCover : openCover K := { --proof F is openCover
+        Cover := F,
+        Open_cover := by
+          intro s hs
+          unfold F at hs
+          rw[Set.mem_setOf] at hs
+          rcases hs with ⟨y, hyK, U, hUx, hVy, h_disj⟩
+          rw[Nbhd] at hVy
+          exact hVy.left
+        Is_cover := by
+          intro y hy
+          rcases h_sep y hy with ⟨U, V, hUx, hVy, h_disj⟩
+          refine Set.mem_sUnion.mpr ?_
+          refine ⟨V, ?_, ?_⟩
+          · exact ⟨y, hy, U, hUx, hVy, h_disj⟩
+          · rw[Nbhd] at hVy
+            exact hVy.right
+      }
+      rw[Compact] at comp
+      specialize comp F_openCover
+      rcases comp with ⟨ t, ht, ht_sub⟩
+      let bx := ⋂₀ {U | ∃ s ∈ t.Cover, ∃ y ∈ K, Nbhd U x ∧ Nbhd s y ∧ U ∩ s = ∅}
+      have hbx_nbhd : Nbhd bx x := sorry
+      have hbx_Kc   : bx ⊆ Kᶜ := sorry
+      rw[Nbhd] at hbx_nbhd
+      rcases hbx_nbhd with ⟨b, hb⟩
+      --rw[Basis.Basics]
+      --rw[metricBasis]
+      rw[Open, Topology.Open,  basisTopology] at b
+      specialize b x
+      apply b at hb
+      rcases hb with ⟨B, hB_basic, hxB, hB_subset_bx⟩ -- this is what we want
+      use B
+      have hBK : B ⊆ Kᶜ := by
+        intro z hz
+        apply hbx_Kc
+        rw[Set.subset_def] at hB_subset_bx
+        apply hB_subset_bx at hz
+        exact hz
+      exact ⟨ hB_basic, hxB, hBK⟩
   case mpr =>
     sorry
