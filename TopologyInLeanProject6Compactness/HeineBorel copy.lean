@@ -59,7 +59,36 @@ theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bound
           exact hxK
         let centers : Set (Rn n) :=
           { x₀ | ∃ s ∈ F.Cover, s = Metric.ball x₀ 1 } --set of all centers
-        have h_centers_finite : centers.Finite := sorry
+        have h_centers_finite : centers.Finite := by --centers is again finite
+          have h_center_of : ∀ s : F.Cover, ∃ x₀, (s : Set (Rn n)) = Metric.ball x₀ 1 := by
+            intro s
+            rw[Set.subset_def] at hsub
+            have hsU : (s : Set (Rn n)) ∈ U := hsub s s.property
+            rcases hsU with ⟨x₀, hx₀K⟩
+            use x₀
+            exact hx₀K.right
+          choose f hf using h_center_of --function that maps ball s ∈ F.Cover to its center x₀
+          have h_centers_subset : centers ⊆ Set.range f := by -- centers is the image of the function
+            intro x₀ hx₀
+            rcases hx₀ with ⟨s, hsF, rfl⟩
+            rw [@Set.mem_range]
+            let y : F.Cover := ⟨ Metric.ball x₀ 1, hsF⟩
+            use y
+            specialize hf y
+            have h_equal : Metric.ball (f y) 1 = Metric.ball x₀ 1 := by
+              exact id (Eq.symm hf)
+            have hx₀ : x₀ ∈ Metric.ball x₀ 1 := by
+              simp
+            have hx₀' : x₀ ∈ Metric.ball (f y) 1 := by
+              simp [h_equal]
+            have hfy : f y ∈ Metric.ball (f y) 1 := by
+              simp
+            have hfy' : f y ∈ Metric.ball x₀ 1 := by
+              simpa [h_equal] using hfy
+            --rw[Metric.ball, Set.mem_setOf] at hfy'
+            --rw[Metric.ball, Set.mem_setOf] at hx₀'
+            sorry
+          sorry
         let centers_finset : Finset (Rn n) := h_centers_finite.toFinset
         have h_centers_nonempty : centers_finset.Nonempty := sorry
         let r : ℝ := Finset.sup' centers_finset h_centers_nonempty (fun y ↦  dist y x + 1)
