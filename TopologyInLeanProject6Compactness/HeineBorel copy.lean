@@ -17,6 +17,34 @@ abbrev Rn (n : ℕ) : Type := (Fin n → ℝ)
 
 def Bounded (K : Set (Rn n)) : Prop := ∃ (r : ℝ) (hr : r > 0) (x₀ : Rn n), ∀ x ∈ K, dist x x₀ < r
 
+def box {n : ℕ} (a b : Rn n) : Set (Rn n) := { x | ∀ i, a i ≤ x i ∧ x i ≤ b i }
+
+lemma exists_box_of_bounded {n : ℕ} {K : Set (Rn n)} :
+Bounded n K →  ∃ a b : Rn n, K ⊆ box a b := by
+  intro hB
+  rcases hB with ⟨r, hr, x₀, hdist⟩
+  let a : Rn n := fun i => x₀ i - r
+  let b : Rn n := fun i => x₀ i + r
+  refine ⟨a, b, ?_⟩
+  intro x hx i
+  have hxball : dist x x₀ < r := hdist x hx
+  have hcoord : |x i - x₀ i| ≤ dist x x₀ := by
+    simpa [dist_eq_norm] using norm_le_pi_norm (i := i) (x - x₀)
+  have hlt : |x i - x₀ i| < r :=
+    lt_of_le_of_lt hcoord hxball
+  constructor
+  case right =>
+    have hx_lt : x i - x₀ i < r := by
+      exact (abs_lt.mp hlt).2
+    have : x i < x₀ i + r := by linarith
+    exact le_of_lt this
+  case left =>
+    have hx_gt : -r < x i - x₀ i := by
+      exact (abs_lt.mp hlt).1
+    have : x₀ i - r < x i := by linarith
+    exact le_of_lt this
+
+
 theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bounded n K := by
   constructor
   case mp =>
@@ -237,19 +265,14 @@ theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bound
     let b : Rn n := fun i => x₀ i + r
     have hKsubset : K ⊆ box a b := by
       intro x hxK i
-  -- use hx x hxK and translate dist bound to coordinate bounds
-
-
-    -- FROM AI: weiss nöd gnau wie wiiter, basically die beide hypothesis prove
-    -- Step 1: use boundedness to find a bounding box
+      have hdist : dist x x₀ < r := hx x hxK
+      have hcoord : |x i - x₀ i| ≤ dist x x₀ := by
+        sorry
+      have hlt : |x i - x₀ i| < r := by
+        sorry
     rcases exists_box_of_bounded (K := K) hBounded with ⟨a, b, hKsubset⟩
-
-    -- Step 2: the box itself is compact (Tychonoff on intervals)
-    have hBoxCompact : Compact (box a b) :=
-      compact_box a b
-
-    -- Step 3: K is a closed subset of a compact set ⇒ K is compact
-    have hKcompact : Compact K :=
-      Compact_closed_subset_of_subset hBoxCompact hClosed hKsubset
-
+    have hBoxCompact : Compact (box a b) := by
+      sorry
+    have hKcompact : Compact K := by
+      sorry
     exact hKcompact
