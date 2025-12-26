@@ -3,18 +3,22 @@ import TopologyInLeanProject6Compactness.Definitions.TopologicalSpaces
 namespace Course
 
 open Set
+open Course
 
 universe u v w
+
+/- A function `f : X → Y` is continuous, iff preimages of open sets are open. -/
+@[simp]
+def Cont {X : Type u} {Y : Type v}
+  [Topology X] [Topology Y]
+  (f : X → Y) : Prop :=
+  ∀ s : Set Y, Open s → Open (f ⁻¹' s)
 
 variable {X : Type u} {Y : Type v} {Z : Type w}
 
 /- # Continuous functions -/
 section
 variable [Topology X] [Topology Y] [Topology Z]
-
-/- A function `f : X → Y` is continuous, iff preimages of open sets are open. -/
-@[simp]
-def Cont (f : X → Y) : Prop := ∀ s, Open s → Open (f ⁻¹' s)
 
 /- Constant maps are continuous. -/
 @[simp]

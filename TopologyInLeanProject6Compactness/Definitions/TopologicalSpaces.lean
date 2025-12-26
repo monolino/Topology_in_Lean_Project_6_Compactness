@@ -1,5 +1,6 @@
 import Mathlib.Tactic
 
+namespace Course
 open Set
 
 universe u v
@@ -145,3 +146,5 @@ def restrictionTopology [Topology X] (U : Set X) (open_U : Open U) : Topology â†
     specialize hC V' hV'1
     rw [hV'2] at hC
     exact hC
+
+end Course

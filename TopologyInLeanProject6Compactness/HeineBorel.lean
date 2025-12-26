@@ -296,9 +296,11 @@ theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bound
         sorry
       have hlt : |x i - x₀ i| < r := by
         sorry
-    rcases exists_box_of_bounded (K := K) hBounded with ⟨a, b, hKsubset⟩
-    have hBoxCompact : Compact (box a b) := by
       sorry
-    have hKcompact : Compact K := by
-      sorry
-    exact hKcompact
+    sorry
+    --rcases exists_box_of_bounded (K := K) hBounded with ⟨a, b, hKsubset⟩
+    --have hBoxCompact : Compact (box a b) := by
+    --  sorry
+    --have hKcompact : Compact K := by
+    --  sorry
+    --exact hKcompact
