@@ -1,6 +1,7 @@
 import Mathlib.Tactic
 import TopologyInLeanProject6Compactness.HeineBorel
 import TopologyInLeanProject6Compactness.Definitions.NewSpaces
+import TopologyInLeanProject6Compactness.Definitions.Compactness
 
 open Course
 open Constructions
@@ -37,22 +38,24 @@ theorem ExtremeValueTheorem (K : Set (Rn n)) (hK : Compact K) (f : {x : Rn n | x
   ∃ x_min x_max : {x : Rn n | x ∈ K},  ∀ x : {x : Rn n // x ∈ K},
   f x_min ≤ f x ∧ f x ≤ f x_max := by
   let g : K_type n K → f_K_type n K f := fun x => ⟨ f x, ⟨x, rfl⟩ ⟩
-  have g_sufj : Function.Surjective g := by
+  have g_surj : Function.Surjective g := by
     intro y
     rcases y with ⟨yval, ⟨x, rfl⟩⟩
     exact ⟨x, rfl⟩
   have g_cont :  Cont g := by
     intro s s_open
-    let π : f_K_type n K f → ℝ := sorry--Constructions.Subspace.incl
-    have π_cont : Cont π := sorry --Constructions.Cont_incl
-    have f_comp : f = π ∘ g := by
+    let π : f_K_type n K f → ℝ := fun y ↦ (y : ℝ)
+    rcases s_open with ⟨V, V_open, rfl⟩
+    have h_preim : g ⁻¹' (π ⁻¹' V)  = (fun x ↦ π (g x)) ⁻¹' V := by
+      ext x
+      rfl
+    have h_comp : (fun x ↦ π (g x)) = f := by
       funext x
       rfl
-    have comp_cont : Cont (π ∘ g) := by
-      rw[f_comp] at f_cont
-      exact f_cont
-    intro x hx
-    rw[Function.comp_def] at f_comp
-    rw[f_comp] at f_cont
-    rw[Course.Cont] at f_cont
-    specialize f_cont s
+    have h_open : Open ((fun x ↦ π (g x)) ⁻¹' V) := by
+      simpa [h_comp] using f_cont V V_open
+    simpa [h_preim] using h_open
+  have compact_K_type : Compact (K_type n K) := by --prove K_type is compact
+    exact hK
+  have compact_fK_type : Compact (Set.univ : Set ↑(f_K_type n K f)) := by
+    exact AltAttempt.Compact_image_2 g g_surj g_cont compact_K_type
