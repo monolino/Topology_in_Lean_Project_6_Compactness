@@ -25,7 +25,9 @@ lemma Open_finite_iInter
   (S : Set α) (hS : S.Finite)
   (U : {a // a ∈ S} → Set X)
   (hU : ∀ s, Open (U s)) :
-  Open (⋂ s, U s) := sorry
+  Open (⋂ s, U s) := by
+    revert hU
+    sorry
 
 theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bounded n K := by
   constructor
