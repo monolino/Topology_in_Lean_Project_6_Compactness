@@ -1,81 +1,68 @@
+import Mathlib.Tactic
+import Mathlib
 import TopologyInLeanProject6Compactness.Definitions.Compactness
 import TopologyInLeanProject6Compactness.Definitions.MetricSpaces
 
+
 open Classical in
 open Finset
+open Course
 
-def Rn (n : ℕ) : Type := (Fin n → ℝ)
+universe u
 
---Euclidean distance
-@[simp]
-noncomputable def Eucldist (n : ℕ) (x y : Rn n) : ℝ := Real.sqrt (∑ i , (x i- y i)^2)
+variable (n : ℕ)
+variable {X : Type u} {Y : Type v} [Topology X] [Topology Y] {s t : Set X}
 
-noncomputable instance Rn_metric_space (n : ℕ) : MetricSpace (Rn n) := {
-  dist := Eucldist n
-  dist_self := by
-    intro x
-    simp
-  dist_comm := by
-    intro x y
-    simp
-    congr
-    ext i
-    ring
-  dist_triangle := by
-    intro x y z
-    simp
-    sorry
-  eq_of_dist_eq_zero := by
-    intro x y hxy
-    simp at hxy
-    sorry
-}
+abbrev Rn (n : ℕ) : Type := (Fin n → ℝ)
 
-noncomputable def Rn_topology (n : ℕ) : Topology (Rn n) :=
-{ Open := fun U ↦ ∀ x ∈ U, ∃ ε > 0, ∀ y, Eucldist n x y < ε → y ∈ U,
-  Open_univ := by
-    intro x hx
-    use 1
-    constructor
-    · linarith
-    intro y hy
-    trivial
-  Open_inter := by
-    intros U V hU hV x hx
-    rcases hx with ⟨hxU, hxV⟩
-    rcases hU x hxU with ⟨ Uε ,hUε, hUε_prop⟩
-    rcases hV x hxV with ⟨ Vε, hVε , hVε_prop⟩
-    let total_ε := min Uε Vε
-    use total_ε
-    constructor
-    · exact lt_min hUε hVε
-    intro y hy
-    have hU' : Eucldist n x y < Uε :=
-      lt_of_lt_of_le hy (min_le_left _ _)
-    have hV' : Eucldist n x y < Vε :=
-      lt_of_lt_of_le hy (min_le_right _ _)
-    exact ⟨hUε_prop y hU', hVε_prop y hV'⟩
-  Open_sUnion := by
-    intros S hS x hx
-    rcases hx with ⟨U, hUinS, hxU⟩
-    rcases hS U hUinS x hxU with ⟨ε, hε_pos, hUprop⟩
-    use ε
-    constructor
-    · exact hε_pos
-    intro y hy
-    exact ⟨U, hUinS, hUprop y hy⟩
-}
+#check (inferInstance : MetricSpace (Rn n))
+#check (inferInstance : TopologicalSpace (Rn n))
 
 def Bounded (K : Set (Rn n)) : Prop := ∃ (r : ℝ) (hr : r > 0) (x₀ : Rn n), ∀ x ∈ K, dist x x₀ < r
 
 def box {n : ℕ} (a b : Rn n) : Set (Rn n) := { x | ∀ i, a i ≤ x i ∧ x i ≤ b i }
 
-theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bounded K := by
+lemma exists_box_of_bounded {n : ℕ} {K : Set (Rn n)} :
+Bounded n K →  ∃ a b : Rn n, K ⊆ box a b := by
+  intro hB
+  rcases hB with ⟨r, hr, x₀, hdist⟩
+  let a : Rn n := fun i => x₀ i - r
+  let b : Rn n := fun i => x₀ i + r
+  refine ⟨a, b, ?_⟩
+  intro x hx i
+  have hxball : dist x x₀ < r := hdist x hx
+  have hcoord : |x i - x₀ i| ≤ dist x x₀ := by
+    simpa [dist_eq_norm] using norm_le_pi_norm (i := i) (x - x₀)
+  have hlt : |x i - x₀ i| < r :=
+    lt_of_le_of_lt hcoord hxball
+  constructor
+  case right =>
+    have hx_lt : x i - x₀ i < r := by
+      exact (abs_lt.mp hlt).2
+    have : x i < x₀ i + r := by linarith
+    exact le_of_lt this
+  case left =>
+    have hx_gt : -r < x i - x₀ i := by
+      exact (abs_lt.mp hlt).1
+    have : x₀ i - r < x i := by linarith
+    exact le_of_lt this
+
+
+lemma Open_finite_iInter
+  {α : Type u} {X : Type u} [Topology X]
+  (S : Set α) (hS : S.Finite)
+  (U : {a // a ∈ S} → Set X)
+  (hU : ∀ s, Open (U s)) :
+  Open (⋂ s, U s) := by
+    revert hU
+    sorry
+
+theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bounded n K := by
   constructor
   case mp =>
     intro comp
     constructor
-    case right =>
+    case right => --BOUNDED
       --open Cover of balls with radius 1 around each point in K
       let U : Set (Set (Rn n)) := { s | ∃ x ∈ K, s = Metric.ball (x : Rn n) 1 }
       let U_openCover : openCover K := {
@@ -103,66 +90,199 @@ theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bound
       rw[subCover] at hsub
       rw[Bounded]
       by_cases hK : K.Nonempty
-      · obtain ⟨x, hxK⟩ := hK --get x out of K
+      · --K nonempty
+        obtain ⟨x, hxK⟩ := hK --get x out of K
         have : K ⊆ ⋃₀ F.Cover := F.Is_cover
         have hxUnion : x ∈ ⋃₀ F.Cover := by
           rw[Set.subset_def] at this
           apply this
           exact hxK
-        rcases hxUnion with ⟨t, htF, hxt⟩ --get ball out of cover
-        rw[Set.subset_def] at hsub
-        have htU : t ∈ U := by
-          specialize hsub t
-          apply hsub at htF
-          exact htF
-        unfold U at htU
-        rw[Set.mem_setOf] at htU
-        rcases htU with ⟨x₀, hx₀K, rfl⟩ --get center of ball t
-        let centers : Set (Rn n) := { x₀ | ∃ s ∈ F.Cover, ∃ x₀ ∈ K, s = Metric.ball x₀ 1 } --set of all centers
-        have h_centers_finite : centers.Finite := sorry
+        let centers : Set (Rn n) :=
+          { x₀ | ∃ s ∈ F.Cover, s = Metric.ball x₀ 1 } --set of all centers
+        have h_centers_finite : centers.Finite := by --centers is again finite
+          have h_center_of : ∀ s : F.Cover, ∃ x₀, (s : Set (Rn n)) = Metric.ball x₀ 1 := by
+            intro s
+            rw[Set.subset_def] at hsub
+            have hsU : (s : Set (Rn n)) ∈ U := hsub s s.property
+            rcases hsU with ⟨x₀, hx₀K⟩
+            use x₀
+            exact hx₀K.right
+          choose f hf using h_center_of --function that maps ball s ∈ F.Cover to its center x₀
+          have h_centers_subset : centers ⊆ Set.range f := by
+            -- centers is the image of the function
+            intro x₀ hx₀
+            rcases hx₀ with ⟨s, hsF, rfl⟩
+            rw [@Set.mem_range]
+            let y : F.Cover := ⟨ Metric.ball x₀ 1, hsF⟩
+            use y
+            specialize hf y
+            have h_equal : Metric.ball (f y) 1 = Metric.ball x₀ 1 := by
+              exact id (Eq.symm hf)
+            have : (1 : ℝ ) > 0 := by
+              exact Real.zero_lt_one
+            have hx : x₀ ∈ Metric.ball (f y) 1 := by
+              rw [h_equal]
+              exact Metric.mem_ball_self this
+            have hy : (f y) ∈ Metric.ball x₀ 1 := by
+              rw [← h_equal]
+              exact Metric.mem_ball_self this
+            sorry
+          haveI : Fintype F.Cover := hFfin.fintype --convert to fintype
+          have h_finite_range : (Set.range f).Finite := Set.finite_range f
+          rw[Set.subset_def] at h_centers_subset
+          exact Set.Finite.subset h_finite_range h_centers_subset
         let centers_finset : Finset (Rn n) := h_centers_finite.toFinset
-        have h_centers_nonempty : centers_finset.Nonempty := sorry
-        let r : ℝ := Finset.sup' centers_finset h_centers_nonempty (fun y ↦  dist y x₀ + 1)
+        have h_centers_nonempty : centers_finset.Nonempty := by --centers.finset is nonempty
+          rcases hxUnion with ⟨s, hsF, hx_in_s⟩
+          have hsU : s ∈ U_openCover.Cover := hsub hsF
+          have : ∃ x₀ ∈ K, s = Metric.ball x₀ 1 := hsU
+          rcases this with ⟨x₀, hx₀K, rfl⟩
+          have hx₀_centers : x₀ ∈ centers := by
+            refine ⟨Metric.ball x₀ 1, ?_, rfl⟩
+            exact hsF
+          have h_centers_nonempty_set : centers.Nonempty := ⟨x₀, hx₀_centers⟩ --centers is nonempty
+          rcases h_centers_nonempty_set with ⟨c, hc⟩
+          have hc_finset : c ∈ centers_finset := by
+            simpa [centers_finset] using (h_centers_finite.mem_toFinset.mpr hc)
+          exact ⟨c, hc_finset⟩
+        let r : ℝ := Finset.sup' centers_finset h_centers_nonempty (fun y ↦  dist y x + 1)
         use r
         have hr : r > 0 := by
           rcases h_centers_nonempty with ⟨ y, hy⟩
-          have h_fun : 1 ≤ dist y x₀ + 1 := by
+          have h_fun : (1 : ℝ) ≤ dist y x + 1 := by
             rw [@le_add_iff_nonneg_left]
             exact dist_nonneg
           apply lt_of_lt_of_le
-          apply zero_lt_one
-          exact Finset.le_sup'_of_le (fun y ↦ dist y x₀ + 1) hy h_fun
+          · apply zero_lt_one
+          exact Finset.le_sup'_of_le (fun y ↦ dist y x + 1) hy h_fun
         use hr
-        use x₀
-        intro x hx
-        have ⟨t, htF, hxt⟩ := Set.mem_sUnion.mp (this hx) --get ball containing x
+        use x
+        intro x₀ hx₀
+        have ⟨t, htF, hx₀t⟩ := Set.mem_sUnion.mp (this hx₀) --get ball containing x
         have htU : t ∈ U := by
+          rw[Set.subset_def] at hsub
           specialize hsub t
           apply hsub at htF
           exact htF
         unfold U at htU
         rw[Set.mem_setOf] at htU
         rcases htU with ⟨x₁, hx₁K, rfl⟩ --get center of ball t
-        rw[Metric.ball] at hxt
-        rw[Set.mem_setOf] at hxt
-        have triang : dist x x₀ ≤ dist x x₁ + dist x₁ x₀ := dist_triangle x x₁ x₀
-        have h_smaller_r : dist x₁ x₀ + 1 < r := by
-          sorry
+        rw[Metric.ball] at hx₀t
+        rw[Set.mem_setOf] at hx₀t
+        have triang : dist x₀ x ≤ dist x₀ x₁ + dist x₁ x := dist_triangle x₀ x₁ x
+        have h_smaller_r : 1 + dist x₁ x ≤ r := by
+          rw[add_comm]
+          unfold r
+          have hx₁_centers : x₁ ∈ centers := by
+            refine ⟨Metric.ball x₁ 1, htF, rfl⟩
+          have hx₁_fin : x₁ ∈ centers_finset := h_centers_finite.mem_toFinset.mpr hx₁_centers
+          rw [@Finset.le_sup'_iff]
+          use x₁
         linarith
       · --empty K
         let r : ℝ := 1
         have hr : r > 0 := by linarith
         use r
-      use hr
+        use hr
         push_neg at hK
         let x₀ : Rn n := fun i ↦ 0 -- 0 ∈ Rn n
         use x₀
         rw[hK]
         intro x hx
         cases hx
-    case left =>
-      have h_hausdorff : @Hausdorff (X?) (Rn_topology n) (Rn n) :=  sorry
-
+    case left => --CLOSED
+      have h_hausdorff : Hausdorff (X := Rn n) := Hausdorff_metricTopology
+      rw[Closed]
+      intro x hx
+      have h_sep : ∀ y ∈ K, ∃ U V, Nbhd U x ∧ Nbhd V y ∧ U ∩ V = ∅ := by
+        intro y hy
+        have hxy : x ≠ y := by
+          intro h
+          apply hx
+          simpa [h] using hy
+        simpa using h_hausdorff x y hxy
+      let F : Set (Set (Rn n)) := {V | ∃ y ∈ K, ∃ U, Nbhd U x ∧ Nbhd V y ∧ U ∩ V = ∅} --cover of K
+      let F_openCover : openCover K := { --proof F is openCover
+        Cover := F,
+        Open_cover := by
+          intro s hs
+          unfold F at hs
+          rw[Set.mem_setOf] at hs
+          rcases hs with ⟨y, hyK, U, hUx, hVy, h_disj⟩
+          rw[Nbhd] at hVy
+          exact hVy.left
+        Is_cover := by
+          intro y hy
+          rcases h_sep y hy with ⟨U, V, hUx, hVy, h_disj⟩
+          refine Set.mem_sUnion.mpr ?_
+          refine ⟨V, ?_, ?_⟩
+          · exact ⟨y, hy, U, hUx, hVy, h_disj⟩
+          · rw[Nbhd] at hVy
+            exact hVy.right
+      }
+      rw[Compact] at comp
+      specialize comp F_openCover
+      rcases comp with ⟨ t, ht, ht_sub⟩
+      have h_sep_cover : ∀ s : t.Cover, ∃ y ∈ K, ∃ U, Nbhd U x ∧ Nbhd (s : Set (Rn n)) y ∧ U ∩ s = ∅ := by
+        intro s
+        have hsF : (↑s : Set (Rn n)) ∈ F := by
+          have hs_t : (↑s : Set (Rn n)) ∈ t.Cover := s.property
+          rw[subCover] at ht_sub
+          rw[Set.subset_def] at ht_sub
+          simpa using ht_sub (↑s) hs_t
+        rcases hsF with ⟨y, hyK, U, hUx, hsy, hU_s_empty⟩
+        exact ⟨y, hyK, U, hUx, hsy, hU_s_empty⟩
+      choose y hyK U hUx hsy hU_s_empty using h_sep_cover
+      let bx : Set (Rn n) := ⋂ s : t.Cover, U s
+      --let bx := ⋂₀ {U | ∃ s ∈ t.Cover, ∃ y ∈ K, Nbhd U x ∧ Nbhd s y ∧ U ∩ s = ∅}
+      have hbx_nbhd : Nbhd bx x := by
+        rw[Nbhd]
+        constructor
+        · have hU_open : ∀ s : ↑t.Cover, Open (U s) := by
+            intro s
+            have hs := hUx s
+            rcases hs with ⟨hs_open, _hx_in_U⟩
+            exact hs_open
+          have h := Open_finite_iInter (S := t.Cover) (hS := ht) (U := fun s => U s) (hU := fun s => hU_open s)
+          exact h
+        · unfold bx
+          intro s hs
+          rcases hs with ⟨c, rfl⟩
+          specialize hUx c
+          rw[Nbhd] at hUx
+          obtain ⟨ hcopen, hcx⟩ := hUx
+          exact hcx
+      have hbx_Kc   : bx ⊆ Kᶜ := by
+        rw[Set.subset_def]
+        intro z hzbx hzK
+        obtain ⟨s, hs_t, hz_in_s⟩ := t.Is_cover hzK
+        let s0 : ↑t.Cover := ⟨s, hs_t⟩
+        have hz_all : z ∈ ⋂ s : ↑t.Cover, U s := by
+          simpa [bx] using hzbx
+        have hzU_all : ∀ s : ↑t.Cover, z ∈ U s := Set.mem_iInter.mp hz_all
+        have hz_in_Us0 : z ∈ U s0 := hzU_all s0
+        have hz_in_inter : z ∈ U s0 ∩ (↑s0 : Set (Rn n)) := by --z in intersection
+          refine And.intro hz_in_Us0 ?_
+          simpa [s0] using hz_in_s
+        have h_empty : U s0 ∩ (↑s0 : Set (Rn n)) = (∅ : Set (Rn n)) := hU_s_empty s0
+        have : z ∈ (∅ : Set (Rn n)) := by
+          rw[h_empty] at hz_in_inter
+          exact hz_in_inter
+        exact this.elim
+      rw[Nbhd] at hbx_nbhd
+      rcases hbx_nbhd with ⟨b, hb⟩
+      rw[Open, Topology.Open,  basisTopology] at b
+      specialize b x
+      apply b at hb
+      rcases hb with ⟨B, hB_basic, hxB, hB_subset_bx⟩ -- this is what we want
+      use B
+      have hBK : B ⊆ Kᶜ := by
+        intro z hz
+        apply hbx_Kc
+        rw[Set.subset_def] at hB_subset_bx
+        apply hB_subset_bx at hz
+        exact hz
+      exact ⟨ hB_basic, hxB, hBK⟩
   case mpr =>
     intro h
     rcases h with ⟨hClosed, hBounded⟩ -- split hypothesis into two parts, prove them seperately
@@ -171,19 +291,14 @@ theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bound
     let b : Rn n := fun i => x₀ i + r
     have hKsubset : K ⊆ box a b := by
       intro x hxK i
-  -- use hx x hxK and translate dist bound to coordinate bounds
-
-
-    -- FROM AI: weiss nöd gnau wie wiiter, basically die beide hypothesis prove
-    -- Step 1: use boundedness to find a bounding box
+      have hdist : dist x x₀ < r := hx x hxK
+      have hcoord : |x i - x₀ i| ≤ dist x x₀ := by
+        sorry
+      have hlt : |x i - x₀ i| < r := by
+        sorry
     rcases exists_box_of_bounded (K := K) hBounded with ⟨a, b, hKsubset⟩
-
-    -- Step 2: the box itself is compact (Tychonoff on intervals)
-    have hBoxCompact : Compact (box a b) :=
-      compact_box a b
-
-    -- Step 3: K is a closed subset of a compact set ⇒ K is compact
-    have hKcompact : Compact K :=
-      Compact_closed_subset_of_subset hBoxCompact hClosed hKsubset
-
+    have hBoxCompact : Compact (box a b) := by
+      sorry
+    have hKcompact : Compact K := by
+      sorry
     exact hKcompact
