@@ -56,19 +56,25 @@ lemma Compact.image {X Y} [Topology X] [Topology Y]
       }
     rcases hK V with ⟨F, hFfin, hFsub⟩ --K is compact
     let F' : openCover (f '' K) :=
-      { Cover := { t | ∃ s ∈ F.Cover, t = f '' s },
+      { Cover := { u | ∃ s ∈ F.Cover, s = f ⁻¹' u ∧ u ∈ U.Cover },
         Open_cover := by
           intro t ht
-          rcases ht with ⟨s, hsF, rfl⟩
-          sorry
+          rcases ht with  ⟨s, hsF, k⟩
+          rcases k with ⟨ hk, htU⟩
+          exact U.Open_cover t htU
         Is_cover := by
           intro y hy
           rcases hy with ⟨x, hxK, rfl⟩
-          sorry
+          have hxV : x ∈ ⋃₀ V.Cover := V.Is_cover hxK
+          rcases Set.mem_sUnion.mp hxV with ⟨s, hsV, hxs⟩
+          rcases hsV with ⟨u, huU, rfl⟩
+          refine Set.mem_sUnion.mpr ?_
+          refine ⟨u, ?_, ?_⟩
+          · rw[Set.mem_setOf]
+            sorry
+          · simpa using hxs
       }
-    refine ⟨F', ?_, ?_⟩
-    · sorry
-    · sorry
+
 
 theorem ExtremeValueTheorem (K : Set (Rn n)) (hK : Compact K) (f : (Rn n) → (Rn 1))
   (f_cont : Cont f) :
