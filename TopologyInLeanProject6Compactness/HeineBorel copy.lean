@@ -2,11 +2,12 @@ import Mathlib.Tactic
 import Mathlib
 import TopologyInLeanProject6Compactness.Definitions.Compactness
 import TopologyInLeanProject6Compactness.Definitions.MetricSpaces
-
+import TopologyInLeanProject6Compactness.Definitions.TopologicalSpaces
 
 open Classical in
 open Finset
 open Course
+open Topology
 
 variable (n : ℕ)
 
@@ -18,6 +19,10 @@ abbrev Rn (n : ℕ) : Type := (Fin n → ℝ)
 def Bounded (K : Set (Rn n)) : Prop := ∃ (r : ℝ) (hr : r > 0) (x₀ : Rn n), ∀ x ∈ K, dist x x₀ < r
 
 def box {n : ℕ} (a b : Rn n) : Set (Rn n) := { x | ∀ i, a i ≤ x i ∧ x i ≤ b i }
+
+lemma Compact_def {X : Type u} [Topology X] (K : Set X) : Compact K ↔
+    ∀ (C : openCover K), ∃ (F : openCover K), F.Cover.Finite ∧ subCover F C := by
+  rfl
 
 lemma exists_box_of_bounded {n : ℕ} {K : Set (Rn n)} :
 Bounded n K →  ∃ a b : Rn n, K ⊆ box a b := by
@@ -43,6 +48,145 @@ Bounded n K →  ∃ a b : Rn n, K ⊆ box a b := by
       exact (abs_lt.mp hlt).1
     have : x₀ i - r < x i := by linarith
     exact le_of_lt this
+
+universe u
+variable {X : Type u} [Topology X]
+
+/-- If `L` is compact in the `openCover` sense, and `K` is a closed subset of `L`,
+then `K` is compact. -/
+lemma Closed.compact_of_subset {K L : Set X}
+    (hK_closed : Closed K) (hKL : K ⊆ L) (hL_compact : Compact L) : Compact K := by
+  intro C
+  classical
+  let D : openCover L :=
+  { Cover      := C.Cover ∪ {Kᶜ}
+    Open_cover := by
+      intro s hs
+      rcases hs with hs | hs
+      case inl =>
+        exact C.Open_cover s hs
+      case inr =>
+        have : s = Kᶜ := by
+          simpa [Set.mem_singleton_iff] using hs
+        subst this
+        simpa [Closed] using hK_closed
+    Is_cover   := by
+      intro x hxL
+      by_cases hxK : x ∈ K
+      case pos =>
+        have hxUnionC : x ∈ ⋃₀ C.Cover := C.Is_cover hxK
+        apply Set.mem_sUnion.mpr
+        rcases Set.mem_sUnion.mp hxUnionC with ⟨s, hsC, hxs⟩
+        refine ⟨s, ?_, hxs⟩
+        exact Or.inl hsC
+      case neg =>
+        apply Set.mem_sUnion.mpr
+        refine ⟨Kᶜ, ?_, ?_⟩
+        case refine_1 =>
+          exact Or.inr (by simp)
+        case refine_2 =>
+          simpa [Set.mem_compl] using hxK
+  }
+  obtain ⟨F, hF_fin, hF_sub⟩ := hL_compact D
+  let G : openCover K :=
+  { Cover      := F.Cover \ {Kᶜ}
+    Open_cover := by
+      intro s hs
+      exact F.Open_cover s hs.1
+    Is_cover   := by
+      intro x hxK
+      have hxL : x ∈ L := hKL hxK
+      have coverF : L ⊆ ⋃₀ F.Cover := F.Is_cover
+      have hxUnionF : x ∈ ⋃₀ F.Cover := coverF hxL
+      rcases Set.mem_sUnion.mp hxUnionF with ⟨s, hsF, hxs⟩
+      have hsD : s ∈ D.Cover := hF_sub hsF
+      have hsNotKc : s ≠ Kᶜ := by
+        intro h
+        subst h
+        have : x ∈ Kᶜ := hxs
+        exact this (by exact hxK)
+      have hsG : s ∈ F.Cover \ {Kᶜ} := by
+        refine ⟨hsF, ?_⟩
+        intro hsKc
+        have : s = Kᶜ := by
+          simpa [Set.mem_singleton_iff] using hsKc
+        exact hsNotKc this
+      apply Set.mem_sUnion.mpr
+      exact ⟨s, hsG, hxs⟩
+  }
+  refine ⟨G, ?_, ?_⟩
+  case refine_1 =>
+    have hSub : G.Cover ⊆ F.Cover := by
+      intro s hs
+      exact hs.1
+    exact Set.Finite.subset hF_fin hSub
+  case refine_2 =>
+    intro s hsG
+    have hsF : s ∈ F.Cover := hsG.1
+    have hsD : s ∈ D.Cover := hF_sub hsF
+    change s ∈ C.Cover ∪ {Kᶜ} at hsD
+    rcases hsD with hsC | hsKc
+    case inl =>
+      exact hsC
+    case inr =>
+      have : s = Kᶜ := by
+        simpa [Set.mem_singleton_iff] using hsKc
+      have : s ≠ Kᶜ := hsG.2
+      exact (this ‹s = Kᶜ›).elim
+
+lemma IsCompact.toCompact {X : Type u} [TopologicalSpace X] [Topology X]
+    {K : Set X} (hK : IsCompact K) : Compact K := by
+  sorry
+  /- classical
+  intro C
+  have h' :
+      ∀ (U : Set (Set X)),
+        (∀ s ∈ U, IsOpen s) →
+        K ⊆ ⋃₀ U →
+        ∃ V ⊆ U, V.Finite ∧ K ⊆ ⋃₀ V :=
+    (isCompact_iff_finite_subcover).mp hK
+  have hC' :
+      ∃ V ⊆ C.Cover, V.Finite ∧ K ⊆ ⋃₀ V :=
+    h' C.Cover
+      (by
+        intro s hs
+        simpa [Open] using C.Open_cover s hs)
+      C.Is_cover
+  rcases hC' with ⟨V, hVsub, hVfin, hVK⟩
+  let F : openCover K :=
+  { Cover      := V
+    Open_cover := by
+      intro s hs
+      have hsC : s ∈ C.Cover := hVsub hs
+      simpa [Open] using C.Open_cover s hsC
+    Is_cover   := hVK }
+  refine ⟨F, hVfin, ?_⟩
+  intro s hs
+  exact hVsub hs -/
+
+lemma hBoxCompact {n : ℕ} (a b : Rn n) : Compact (box a b) := by
+  classical
+  have h_eq :
+      box a b =
+        Set.univ.pi (fun i : Fin n => Set.Icc (a i) (b i)) := by
+    ext x; constructor
+    case h.mp =>
+      intro hx i hi
+      specialize hx i
+      exact hx
+    case h.mpr =>
+      intro hx i
+      have hx' : x i ∈ Set.Icc (a i) (b i) := hx i (by trivial)
+      exact hx'
+  have h_isCompact_pi :
+      IsCompact (Set.univ.pi (fun i : Fin n => Set.Icc (a i) (b i))) := by
+    have h_coord : ∀ i : Fin n, IsCompact (Set.Icc (a i) (b i)) := fun i =>
+      isCompact_Icc
+    simpa using isCompact_univ_pi h_coord
+  have h_isCompact : IsCompact (box a b) := by
+    simpa [h_eq] using h_isCompact_pi
+  exact (IsCompact.toCompact h_isCompact)
+
 
 
 theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bounded n K := by
@@ -259,20 +403,15 @@ theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bound
       exact ⟨ hB_basic, hxB, hBK⟩
   case mpr =>
     intro h
-    rcases h with ⟨hClosed, hBounded⟩ -- split hypothesis into two parts, prove them seperately
-    rcases hBounded with ⟨r, hr, x₀, hx⟩
-    let a : Rn n := fun i => x₀ i - r
-    let b : Rn n := fun i => x₀ i + r
-    have hKsubset : K ⊆ box a b := by
-      intro x hxK i
-      have hdist : dist x x₀ < r := hx x hxK
-      have hcoord : |x i - x₀ i| ≤ dist x x₀ := by
-        sorry
-      have hlt : |x i - x₀ i| < r := by
-        sorry
-    rcases exists_box_of_bounded (K := K) hBounded with ⟨a, b, hKsubset⟩
-    have hBoxCompact : Compact (box a b) := by
-      sorry
-    have hKcompact : Compact K := by
-      sorry
+    rcases h with ⟨hClosed, hBounded⟩
+    rcases exists_box_of_bounded (n := n) (K := K) hBounded with
+      ⟨a, b, hKsubset⟩
+    have hBoxCompact' : Compact (box a b) :=
+      hBoxCompact (n := n) a b
+    have hKcompact : Compact K :=
+      Closed.compact_of_subset
+        (X := Rn n)
+        hClosed
+        hKsubset
+        hBoxCompact'
     exact hKcompact
