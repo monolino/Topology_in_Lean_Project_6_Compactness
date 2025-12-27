@@ -33,29 +33,48 @@ instance instSubspace_f_K_type
 
 #check Constructions.Subspace.incl
 
-theorem ExtremeValueTheorem (K : Set (Rn n)) (hK : Compact K) (f : {x : Rn n | x ∈ K} → ℝ)
+lemma Compact.image {X Y} [Topology X] [Topology Y]
+    {K : Set X} (hK : Compact K)
+    {f : X → Y} (hf : Cont f) :
+    Compact (f '' K) := by
+    intro U
+    let V : openCover K :=
+      { Cover := { s | ∃ t ∈ U.Cover, s = f ⁻¹' t } --pullback cover
+        Open_cover := by
+          intro s hs
+          rcases hs with ⟨t, htU, rfl⟩
+          exact hf t (U.Open_cover t htU)
+        Is_cover := by
+          intro x hxK
+          have : f x ∈ ⋃₀ U.Cover := U.Is_cover ⟨x, hxK, rfl⟩
+          rw[Set.sUnion] at this
+          rcases this with ⟨t, htU, hxt⟩
+          refine Set.mem_sUnion.mpr ?_
+          refine ⟨f ⁻¹' t, ?_, ?_⟩
+          · exact ⟨t, htU, rfl⟩
+          · simpa using hxt
+      }
+    rcases hK V with ⟨F, hFfin, hFsub⟩ --K is compact
+    let F' : openCover (f '' K) :=
+      { Cover := { t | ∃ s ∈ F.Cover, t = f '' s },
+        Open_cover := by
+          intro t ht
+          rcases ht with ⟨s, hsF, rfl⟩
+          sorry
+        Is_cover := by
+          intro y hy
+          rcases hy with ⟨x, hxK, rfl⟩
+          sorry
+      }
+    refine ⟨F', ?_, ?_⟩
+    · sorry
+    · sorry
+
+theorem ExtremeValueTheorem (K : Set (Rn n)) (hK : Compact K) (f : (Rn n) → (Rn 1))
   (f_cont : Cont f) :
-  ∃ x_min x_max : {x : Rn n | x ∈ K},  ∀ x : {x : Rn n // x ∈ K},
+  ∃ x_min x_max : K,  ∀ x : K,
   f x_min ≤ f x ∧ f x ≤ f x_max := by
-  let g : K_type n K → f_K_type n K f := fun x => ⟨ f x, ⟨x, rfl⟩ ⟩
-  have g_surj : Function.Surjective g := by
-    intro y
-    rcases y with ⟨yval, ⟨x, rfl⟩⟩
-    exact ⟨x, rfl⟩
-  have g_cont :  Cont g := by
-    intro s s_open
-    let π : f_K_type n K f → ℝ := fun y ↦ (y : ℝ)
-    rcases s_open with ⟨V, V_open, rfl⟩
-    have h_preim : g ⁻¹' (π ⁻¹' V)  = (fun x ↦ π (g x)) ⁻¹' V := by
-      ext x
-      rfl
-    have h_comp : (fun x ↦ π (g x)) = f := by
-      funext x
-      rfl
-    have h_open : Open ((fun x ↦ π (g x)) ⁻¹' V) := by
-      simpa [h_comp] using f_cont V V_open
-    simpa [h_preim] using h_open
-  have compact_K_type : Compact (K_type n K) := by --prove K_type is compact
-    exact hK
-  have compact_fK_type : Compact (Set.univ : Set ↑(f_K_type n K f)) := by
-    exact AltAttempt.Compact_image_2 g g_surj g_cont compact_K_type
+  have hfKCompact : Compact (f '' K) := hK.image f_cont
+  have h_C_B : Closed (f '' K) ∧ Bounded 1 (f '' K) :=
+    (HeineBorel (n := 1) (K := f '' K)).mp hfKCompact
+  sorry
