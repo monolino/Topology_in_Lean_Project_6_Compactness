@@ -395,10 +395,9 @@ def pullbackCover {I : Type u} (f : X → Y) (cont_f : Cont f) (C : openCover I 
   Is_cover := by
     rw [← Set.preimage_iUnion, C.Is_cover, Set.preimage_univ]
 
-theorem Compact_image (f : X → Y) (surj_f : Function.Surjective f) (cont_f : Cont f) :
+theorem Compact_image_2 (f : X → Y) (surj_f : Function.Surjective f) (cont_f : Cont f) :
   Compact X → Compact Y := by
-  intro compact_X
-  intro I C
+  intro compact_X I C
   let D := pullbackCover f cont_f C
   rw [Compact] at compact_X
   obtain ⟨N,s,fin_N,sub_s_D⟩  := compact_X I D
