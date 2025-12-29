@@ -188,8 +188,58 @@ lemma hBoxCompact {n : ℕ} (a b : Rn n) : Compact (box a b) := by
   exact (IsCompact.toCompact h_isCompact)
 
 lemma eq_of_mem_ball_of_mem_ball {x y : Rn n} {r : ℝ}
-    (hx : x ∈ Metric.ball y r) (hy : y ∈ Metric.ball x r) (hr : 0 < r) :
-    x = y := sorry
+    (hx : x ∈ Metric.ball y r) (hy : y ∈ Metric.ball x r)
+    (h_equal : Metric.ball x r = Metric.ball y r ) (hr : 0 < r) :
+    x = y := by
+    have hxy : dist x y < r := hx
+    have hyx : dist y x < r := hy
+    have : dist x y = 0 := by
+      by_contra!
+      rw [dist_ne_zero] at this
+      set d := dist x y with hd
+      let z := x + (r/2) • ((1 / d) • (y - x))
+      have hz_dist_x : dist z x = r/2 := by -- distance between x and z
+        simp [z, dist_eq_norm, norm_smul, d]
+        simp [norm_sub_rev]
+        simp [abs_of_pos hr]
+        have hnorm_ne : ‖x - y‖ ≠ 0 := by
+          intro h
+          have equal : x = y := by
+            rw [norm_eq_zero] at h
+            rw [sub_eq_iff_eq_add'] at h
+            simp at h
+            exact h
+          trivial
+        simp [hnorm_ne]
+      have hz_dist_y : dist z y = |1 - r/(2*d)| * d := by --distance between y z
+        have hform : z - y = (1 - r/(2*d)) • (x - y) := by
+          simp [z]
+          simp [sub_eq_add_neg, add_comm, add_left_comm]
+          sorry
+        simp [dist_eq_norm, hform, norm_smul]
+        sorry
+      have hz_in_x : z ∈ Metric.ball x r := by
+        have : r/2 < r := by
+          simp
+          exact hr
+        simpa [Metric.mem_ball, hz_dist_x]
+      have hz_notin_y : z ∉ Metric.ball y r := by
+        intro hz
+        have hy_lt : dist z y < r := hz
+        have hy_lt' : |1 - r/(2*d)| * d < r := by simpa [hz_dist_y] using hy_lt
+        have d_pos : 0 < d := by
+          simpa [d] using dist_pos.mpr this
+        have hsign := lt_or_ge (1 - r/(2*d)) 0
+        cases hsign with
+        | inl hneg => -- 1 - r/(2*d) < 0
+            have := abs_of_neg hneg
+            rw[this] at hy_lt'
+            sorry
+        | inr hpos => -- 1 - r/(2*d) ≥ 0
+            sorry
+      have hz_in_y : z ∈ Metric.ball y r := by simpa [h_equal] using hz_in_x
+      trivial
+    simpa using dist_eq_zero.mp this
 
 theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bounded n K := by
   constructor
@@ -261,7 +311,7 @@ theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bound
               rw [← h_equal]
               exact Metric.mem_ball_self this
             have zero_b_one : (0 : ℝ ) < 1 := zero_lt_one
-            exact eq_of_mem_ball_of_mem_ball n hy hx zero_b_one
+            exact eq_of_mem_ball_of_mem_ball n hy hx h_equal zero_b_one
           haveI : Fintype F.Cover := hFfin.fintype --convert to fintype
           have h_finite_range : (Set.range f).Finite := Set.finite_range f
           rw[Set.subset_def] at h_centers_subset
@@ -290,7 +340,6 @@ theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bound
           apply lt_of_lt_of_le
           · apply zero_lt_one
           exact Finset.le_sup'_of_le (fun y ↦ dist y x + 1) hy h_fun
-
         use hr
         use x
         intro x₀ hx₀
