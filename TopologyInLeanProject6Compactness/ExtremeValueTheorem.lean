@@ -6,15 +6,7 @@ import TopologyInLeanProject6Compactness.Definitions.Compactness
 open Course
 open Constructions
 
-variable (n : ℕ) (K : Set (Rn n)) (f : {x : Rn n | x ∈ K} → ℝ)
-/-
-K ⊆ ℝ^n
-f : K → ℝ
--/
-
--- K and f(K) must be a type s.t. I can use Compact_image
-def K_type := {x : Rn n | x ∈ K}
-def f_K_type (n : ℕ) (K : Set (Rn n)) (f : K_type n K → ℝ) := {y : ℝ | ∃ x : K_type n K, f x = y}
+variable (n : ℕ)
 
 @[simp]
 def ContOn {X : Type u} {Y : Type v}
