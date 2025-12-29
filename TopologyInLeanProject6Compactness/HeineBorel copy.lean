@@ -389,7 +389,6 @@ theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bound
         exact this.elim
       rw[Nbhd] at hbx_nbhd
       rcases hbx_nbhd with ⟨b, hb⟩
-      rw[Open, Topology.Open,  basisTopology] at b
       specialize b x
       apply b at hb
       rcases hb with ⟨B, hB_basic, hxB, hB_subset_bx⟩ -- this is what we want
