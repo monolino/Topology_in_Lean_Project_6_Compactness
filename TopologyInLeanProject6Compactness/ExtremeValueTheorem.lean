@@ -16,22 +16,27 @@ f : K → ℝ
 def K_type := {x : Rn n | x ∈ K}
 def f_K_type (n : ℕ) (K : Set (Rn n)) (f : K_type n K → ℝ) := {y : ℝ | ∃ x : K_type n K, f x = y}
 
-instance instTopology_f_K_type
-  (n : ℕ) (K : Set (Rn n)) (f : ↑(K_type n K) → ℝ) :
-  Topology (f_K_type n K f) :=
-  Constructions.pullbackTopology ℝ (inferInstance) (f_K_type n K f) (fun y => (y : ℝ))
+@[simp]
+def ContOn {X : Type u} {Y : Type v}
+  [Topology X] [Topology Y]
+  (f : X → Y) (K : Set X) : Prop :=
+  ∀ s, Open s → Open (K ∩ f ⁻¹' s)
 
-instance instSubspace_f_K_type
-  (n : ℕ) (K : Set (Rn n)) (f : (K_type n K) → ℝ) :
-  Constructions.Subspace ℝ :=
-  Constructions.Subspace_pullbackTopology (fun y : f_K_type n K f => (y : ℝ))
-    (by
-      intro x y h
-      cases x; cases y
-      simp at h
-      simp [h])
+lemma ContOn.toContinuousOn
+    (hf : ContOn f K) :
+    ContinuousOn f K := by
+  intro x hx
+  refine ContinuousAt_iff_continuousAtWithin.2 ?_
+  have h := hf
+  unfold ContinuousWithinAt
+  intro s hs_open hfx
+  have h_pre := h s hs_open
+  have hx_in : x ∈ K ∩ f ⁻¹' s := by
+    exact ⟨hx, hfx⟩
+  have hx_int : x ∈ interior (K ∩ f ⁻¹' s) :=
+    IsOpen.mem_interior h_pre hx_in
+  simpa [mem_interior_iff_mem_nhds] using hx_int
 
-#check Constructions.Subspace.incl
 
 lemma Compact.image {X Y} [Topology X] [Topology Y]
     {K : Set X} (hK : Compact K)
@@ -77,10 +82,10 @@ lemma Compact.image {X Y} [Topology X] [Topology Y]
 
 
 theorem ExtremeValueTheorem (K : Set (Rn n)) (hK : Compact K) (f : (Rn n) → (Rn 1))
-  (f_cont : Cont f) :
+  (f_cont : ContOn f K) :
   ∃ x_min x_max : K,  ∀ x : K,
   f x_min ≤ f x ∧ f x ≤ f x_max := by
-  have hfKCompact : Compact (f '' K) := hK.image f_cont
+  have hfKCompact : Compact (f '' K) := sorry
   have h_C_B : Closed (f '' K) ∧ Bounded 1 (f '' K) :=
     (HeineBorel (n := 1) (K := f '' K)).mp hfKCompact
   sorry
