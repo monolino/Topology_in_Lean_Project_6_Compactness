@@ -187,7 +187,9 @@ lemma hBoxCompact {n : ℕ} (a b : Rn n) : Compact (box a b) := by
     simpa [h_eq] using h_isCompact_pi
   exact (IsCompact.toCompact h_isCompact)
 
-
+lemma eq_of_mem_ball_of_mem_ball {x y : Rn n} {r : ℝ}
+    (hx : x ∈ Metric.ball y r) (hy : y ∈ Metric.ball x r) (hr : 0 < r) :
+    x = y := sorry
 
 theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bounded n K := by
   constructor
@@ -258,7 +260,8 @@ theorem HeineBorel {n : ℕ} (K : Set (Rn n)) : Compact K ↔ Closed K ∧ Bound
             have hy : (f y) ∈ Metric.ball x₀ 1 := by
               rw [← h_equal]
               exact Metric.mem_ball_self this
-            sorry
+            have zero_b_one : (0 : ℝ ) < 1 := zero_lt_one
+            exact eq_of_mem_ball_of_mem_ball n hy hx zero_b_one
           haveI : Fintype F.Cover := hFfin.fintype --convert to fintype
           have h_finite_range : (Set.range f).Finite := Set.finite_range f
           rw[Set.subset_def] at h_centers_subset
