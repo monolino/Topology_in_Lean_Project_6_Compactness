@@ -22,70 +22,62 @@ def ContOn {X : Type u} {Y : Type v}
   (f : X → Y) (K : Set X) : Prop :=
   ∀ s, Open s → Open (K ∩ f ⁻¹' s)
 
-lemma ContOn.toContinuousOn
-    (hf : ContOn f K) :
-    ContinuousOn f K := by
-  intro x hx
-  refine ContinuousAt_iff_continuousAtWithin.2 ?_
-  have h := hf
-  unfold ContinuousWithinAt
-  intro s hs_open hfx
-  have h_pre := h s hs_open
-  have hx_in : x ∈ K ∩ f ⁻¹' s := by
-    exact ⟨hx, hfx⟩
-  have hx_int : x ∈ interior (K ∩ f ⁻¹' s) :=
-    IsOpen.mem_interior h_pre hx_in
-  simpa [mem_interior_iff_mem_nhds] using hx_int
-
-
-lemma Compact.image {X Y} [Topology X] [Topology Y]
+lemma Compact.image_on {X Y} [Topology X] [Topology Y]
     {K : Set X} (hK : Compact K)
-    {f : X → Y} (hf : Cont f) :
+    {f : X → Y} (hf : ContOn f K) :
     Compact (f '' K) := by
-    intro U
-    let V : openCover K :=
-      { Cover := { s | ∃ t ∈ U.Cover, s = f ⁻¹' t } --pullback cover
-        Open_cover := by
-          intro s hs
-          rcases hs with ⟨t, htU, rfl⟩
-          exact hf t (U.Open_cover t htU)
-        Is_cover := by
-          intro x hxK
-          have : f x ∈ ⋃₀ U.Cover := U.Is_cover ⟨x, hxK, rfl⟩
-          rw[Set.sUnion] at this
-          rcases this with ⟨t, htU, hxt⟩
-          refine Set.mem_sUnion.mpr ?_
-          refine ⟨f ⁻¹' t, ?_, ?_⟩
-          · exact ⟨t, htU, rfl⟩
-          · simpa using hxt
-      }
-    rcases hK V with ⟨F, hFfin, hFsub⟩ --K is compact
-    let F' : openCover (f '' K) :=
-      { Cover := { u | ∃ s ∈ F.Cover, s = f ⁻¹' u ∧ u ∈ U.Cover },
-        Open_cover := by
-          intro t ht
-          rcases ht with  ⟨s, hsF, k⟩
-          rcases k with ⟨ hk, htU⟩
-          exact U.Open_cover t htU
-        Is_cover := by
-          intro y hy
-          rcases hy with ⟨x, hxK, rfl⟩
-          have hxV : x ∈ ⋃₀ V.Cover := V.Is_cover hxK
-          rcases Set.mem_sUnion.mp hxV with ⟨s, hsV, hxs⟩
-          rcases hsV with ⟨u, huU, rfl⟩
-          refine Set.mem_sUnion.mpr ?_
-          refine ⟨u, ?_, ?_⟩
-          · rw[Set.mem_setOf]
-            sorry
-          · simpa using hxs
-      }
-
+    intro C
+    let D : openCover K := {
+      Cover := { S : Set X | ∃ V ∈ C.Cover, S = K ∩ f ⁻¹' V }
+      Open_cover := by
+        intro s hs
+        rcases hs with ⟨V, hV_in_C, rfl⟩
+        have hV_open : Open V := C.Open_cover V hV_in_C
+        exact hf V hV_open
+      Is_cover := by
+        intro x hxK
+        have hx_img : f x ∈ f '' K := ⟨x, hxK, rfl⟩
+        rcases C.Is_cover hx_img with ⟨V, hV_in_C, hx_in_V⟩
+        refine ⟨K ∩ f ⁻¹' V, ?mem_D, ?mem_set⟩
+        · refine ⟨V, hV_in_C, rfl⟩
+        · exact ⟨hxK, hx_in_V⟩
+    }
+    obtain ⟨F, hF_finite, hF_sub⟩ := hK D --K is Compact
+    let G : openCover (f '' K) := {
+      Cover := { V : Set Y | ∃ S ∈ F.Cover, ∃ V' ∈ C.Cover, S = K ∩ f ⁻¹' V' ∧ V = V' }
+      Open_cover := by
+        intro V hV
+        rcases hV with ⟨S, hS_in_F, V', hV'_in_C, hS_eq, rfl⟩
+        exact C.Open_cover V hV'_in_C
+      Is_cover := by
+        intro y hy
+        rcases hy with ⟨x, hxK, rfl⟩
+        have hx_in_F : ∃ S ∈ F.Cover, x ∈ S := by
+          have := F.Is_cover hxK
+          rcases this with ⟨S, hS_in_F, hxS⟩
+          exact ⟨S, hS_in_F, hxS⟩
+        rcases hx_in_F with ⟨S, hS_in_F, hxS⟩
+        have hS_sub : S ∈ D.Cover := hF_sub hS_in_F
+        rcases hS_sub with ⟨V', hV'_in_C, hS_eq⟩
+        have hxV' : f x ∈ V' := by
+          have := hxS
+          rw[hS_eq, Set.inter_def, Set.mem_setOf] at hxS
+          exact hxS.right
+        refine ⟨V', ?mem_G, hxV'⟩
+        exact ⟨S, hS_in_F, V', hV'_in_C, hS_eq, rfl⟩
+    }
+    use G
+    constructor
+    · sorry --G is finite
+    · intro V hV
+      rcases hV with ⟨S, hS_in_F, V', hV'_in_C, hS_eq, rfl⟩
+      exact hV'_in_C
 
 theorem ExtremeValueTheorem (K : Set (Rn n)) (hK : Compact K) (f : (Rn n) → (Rn 1))
   (f_cont : ContOn f K) :
   ∃ x_min x_max : K,  ∀ x : K,
-  f x_min ≤ f x ∧ f x ≤ f x_max := by
-  have hfKCompact : Compact (f '' K) := sorry
+  f x_min ≤ f x ∧ f x ≤ f x_max :=
+  have hfKCompact : Compact (f '' K) := Compact.image_on hK f_cont
   have h_C_B : Closed (f '' K) ∧ Bounded 1 (f '' K) :=
     (HeineBorel (n := 1) (K := f '' K)).mp hfKCompact
   sorry
