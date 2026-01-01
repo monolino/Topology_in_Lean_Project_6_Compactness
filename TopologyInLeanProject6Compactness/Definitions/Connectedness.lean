@@ -5,8 +5,8 @@ import TopologyInLeanProject6Compactness.Definitions.MetricSpaces
 import TopologyInLeanProject6Compactness.Definitions.Bases
 import TopologyInLeanProject6Compactness.Definitions.NewSpaces
 
-open Course
-namespace MyConnected
+open scoped Course
+namespace Course
 
 variable {X Y : Type*} [Topology X] [Topology Y]
 
@@ -139,4 +139,4 @@ theorem Connected_PathConnected : PathConnected X → Connected X := by
 
 -- Products of (path)-connected spaces are (path)-connected.
 
-end MyConnected
+end Course

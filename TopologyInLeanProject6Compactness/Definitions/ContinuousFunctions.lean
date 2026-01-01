@@ -1,8 +1,10 @@
 import TopologyInLeanProject6Compactness.Definitions.TopologicalSpaces
 
+
 namespace Course
 
 open Set
+open scoped Course
 open Course
 
 universe u v w

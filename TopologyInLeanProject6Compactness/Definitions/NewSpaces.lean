@@ -2,7 +2,6 @@ import Mathlib.Tactic
 import TopologyInLeanProject6Compactness.Definitions.TopologicalSpaces
 import TopologyInLeanProject6Compactness.Definitions.Bases
 
-open Course
 /-
 Let Top(X,Y) := {f : X → Y | f continuous} denote the set of continuous maps from X to Y.
 
@@ -15,7 +14,9 @@ You can also see it directly since id ∈ Top((X,TX),(X,TX')) is equivalent to T
 In other words, the topology on X is completely determined (up to unique homeomorphism) by the continuous maps going into X (resp. out of X).
 -/
 
-namespace Constructions
+namespace Course
+
+open scoped Course
 
 universe u
 
@@ -283,4 +284,4 @@ instance Coproduct_coproductTopology (X : Type u) [TX : Topology X] (Y : Type u)
   TC := coproductTopology X Y
   char_Coproduct := by sorry
 
-end Constructions
+end Course

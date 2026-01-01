@@ -29,6 +29,7 @@ Also helpful:
 -/
 
 open Metric
+open scoped Course
 
 theorem ball_in_ball {x : X} {ε : ℝ} : ∀ y ∈ ball x ε, ∃ δ, (0 < δ ∧ ball y δ ⊆ ball x ε) := by
   simp only [ball, Set.setOf_subset_setOf]
@@ -151,5 +152,65 @@ theorem Hausdorff_metricTopology : @Hausdorff X metricTopology := by
         rw [w3]
         apply add_lt_add hzx hzy
       linarith
+
+variable (n : ℕ)
+
+abbrev Rn (n : ℕ) : Type := (Fin n → ℝ)
+
+def Bounded (K : Set (Rn n)) : Prop := ∃ (r : ℝ) (hr : r > 0) (x₀ : Rn n), ∀ x ∈ K, dist x x₀ < r
+
+lemma eq_of_mem_ball_of_mem_ball {x y : Rn n} {r : ℝ}
+    (hx : x ∈ Metric.ball y r) (hy : y ∈ Metric.ball x r)
+    (h_equal : Metric.ball x r = Metric.ball y r ) (hr : 0 < r) :
+    x = y := by
+    have hxy : dist x y < r := hx
+    have hyx : dist y x < r := hy
+    have : dist x y = 0 := by
+      by_contra!
+      rw [dist_ne_zero] at this
+      set d := dist x y with hd
+      let z := x + (r/2) • ((1 / d) • (y - x))
+      have hz_dist_x : dist z x = r/2 := by -- distance between x and z
+        simp [z, dist_eq_norm, norm_smul, d]
+        simp [norm_sub_rev]
+        simp [abs_of_pos hr]
+        have hnorm_ne : ‖x - y‖ ≠ 0 := by
+          intro h
+          have equal : x = y := by
+            rw [norm_eq_zero] at h
+            rw [sub_eq_iff_eq_add'] at h
+            simp at h
+            exact h
+          trivial
+        simp [hnorm_ne]
+      have hz_dist_y : dist z y = |1 - r/(2*d)| * d := by --distance between y z
+        have hform : z - y = (1 - r/(2*d)) • (x - y) := by
+          simp [z]
+          simp [sub_eq_add_neg, add_comm, add_left_comm]
+          sorry
+        simp [dist_eq_norm, hform, norm_smul]
+        sorry
+      have hz_in_x : z ∈ Metric.ball x r := by
+        have : r/2 < r := by
+          simp
+          exact hr
+        simpa [Metric.mem_ball, hz_dist_x]
+      have hz_notin_y : z ∉ Metric.ball y r := by
+        intro hz
+        have hy_lt : dist z y < r := hz
+        have hy_lt' : |1 - r/(2*d)| * d < r := by simpa [hz_dist_y] using hy_lt
+        have d_pos : 0 < d := by
+          simpa [d] using dist_pos.mpr this
+        have hsign := lt_or_ge (1 - r/(2*d)) 0
+        cases hsign with
+        | inl hneg => -- 1 - r/(2*d) < 0
+            have := abs_of_neg hneg
+            rw[this] at hy_lt'
+            sorry
+        | inr hpos => -- 1 - r/(2*d) ≥ 0
+            sorry
+      have hz_in_y : z ∈ Metric.ball y r := by simpa [h_equal] using hz_in_x
+      trivial
+    simpa using dist_eq_zero.mp this
 
 end Course
