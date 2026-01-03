@@ -65,11 +65,112 @@ lemma Compact.image_on {X Y} [Topology X] [Topology Y]
       rcases hV with ⟨S, hS_in_F, V', hV'_in_C, hS_eq, rfl⟩
       exact hV'_in_C
 
-theorem ExtremeValueTheorem (K : Set (Rn n)) (hK : Compact K) (f : (Rn n) → (Rn 1))
-  (f_cont : ContOn f K) :
+private def coord0 (x : Rn 1) : ℝ := x 0
+
+
+lemma closed_bounded_has_minmax_Rn1
+    (K : Set (Rn 1)) (hK_ne : K.Nonempty)
+    (hK_closed : Closed K) (hK_bdd : Bounded 1 K) :
+    ∃ y_min y_max, y_min ∈ K ∧ y_max ∈ K ∧
+      ∀ y ∈ K, y_min ≤ y ∧ y ≤ y_max := by
+  classical
+  have hK_compact : Compact K :=
+    (HeineBorel (n := 1) (K := K)).mpr ⟨hK_closed, hK_bdd⟩
+  let g : Rn 1 → ℝ := fun x => x 0
+  have hg_cont : Continuous g := by
+    simpa using (continuous_apply 0 : Continuous fun x : Rn 1 => x 0)
+  obtain ⟨y_min, hy_minK, hmin⟩ :=
+    hK_compact.exists_isMinOn g K hK_ne
+  obtain ⟨y_max, hy_maxK, hmax⟩ :=
+    hK_compact.exists_isMaxOn g K hK_ne
+  refine ⟨y_min, y_max, hy_minK, hy_maxK, ?_⟩
+  intro y hyK
+  have h1 : g y_min ≤ g y := hmin hyK
+  have h2 : g y ≤ g y_max := hmax hyK
+  simpa [g] using And.intro h1 h2
+
+
+
+
+  theorem ExtremeValueTheorem (n : ℕ)
+  (K : Set (Rn n)) (hK : Compact K) (hK_ne : K.Nonempty)
+  (f : (Rn n) → (Rn 1)) (f_cont : ContOn f K) :
   ∃ x_min x_max : K,  ∀ x : K,
-  f x_min ≤ f x ∧ f x ≤ f x_max :=
-  have hfKCompact : Compact (f '' K) := Compact.image_on hK f_cont
+    f x_min ≤ f x ∧ f x ≤ f x_max := by
+  classical
+  have hfKCompact : Compact (f '' K) :=
+    Compact.image_on (K := K) hK f_cont
   have h_C_B : Closed (f '' K) ∧ Bounded 1 (f '' K) :=
     (HeineBorel (n := 1) (K := f '' K)).mp hfKCompact
+  have h_closed : Closed (f '' K) := h_C_B.1
+  have h_bdd    : Bounded 1 (f '' K) := h_C_B.2
+  have h_img_ne : (f '' K).Nonempty := by
+    rcases hK_ne with ⟨x0, hx0K⟩
+    exact ⟨f x0, ⟨x0, hx0K, rfl⟩⟩
+  obtain ⟨y_min, hy_min_in, y_max, hy_max_in, h_extreme⟩ :=
+    closed_bounded_has_minmax_Rn1 (K := f '' K) h_img_ne h_closed h_bdd
+  rcases hy_min_in with ⟨x_min, hx_minK, rfl⟩
+  rcases hy_max_in with ⟨x_max, hx_maxK, rfl⟩
+  refine ⟨⟨x_min, hx_minK⟩, ⟨x_max, hx_maxK⟩, ?_⟩
+  intro x
+  have hx_img : f x ∈ f '' K := ⟨x, x.property, rfl⟩
+  specialize h_extreme (f x) hx_img
+  exact h_extreme
+
+
+def f_sub {n : ℕ} (K : Set (Rn n)) (f : Rn n → Rn 1) :
+    K → { y : Rn 1 // y ∈ f '' K } :=
+  fun x => ⟨f x, ⟨x, x.property, rfl⟩⟩
+
+/-
+I also tried to solve everything within the EVT, but I could not resolve the errors,
+similarly to the seperate version.
+
+variable (n : ℕ)
+
+theorem ExtremeValueTheorem
+  (K : Set (Rn n)) (hK : Compact K) (hK_ne : K.Nonempty)
+  (f : (Rn n) → (Rn 1)) (f_cont : ContOn f K) :
+  ∃ x_min x_max : K, ∀ x : K,
+    f x_min ≤ f x ∧ f x ≤ f x_max := by
+  classical
+  have hfKCompact : Compact (f '' K) :=
+    Compact.image_on (K := K) hK f_cont
+  have h_C_B : Closed (f '' K) ∧ Bounded 1 (f '' K) :=
+    (HeineBorel (n := 1) (K := f '' K)).mp hfKCompact
+  have h_closed : Closed (f '' K) := h_C_B.1
+  have h_bdd    : Bounded 1 (f '' K) := h_C_B.2
+  have h_closed_iso : IsClosed (f '' K) := by
+    sorry
+  have h_bdd_iso : Bornology.IsBounded (f '' K) := by
+    sorry
+  have h_compact_iso : Compact (f '' K) :=
+    sorry --(isCompact_iff_isClosed_bounded).2 ⟨h_closed_iso, h_bdd_iso⟩
+  have h_img_ne : (f '' K).Nonempty := by
+    rcases hK_ne with ⟨x0, hx0K⟩
+    exact ⟨f x0, ⟨x0, hx0K, rfl⟩⟩
+  let g : f '' K → ℝ := fun y => (y : Rn 1) 0
+  have hg_cont : Continuous g := by
+    have h_coord : Continuous fun x : Rn 1 => x 0 := by
+      simpa using (continuous_apply 0 : Continuous fun x : Rn 1 => x 0)
+    exact h_coord.comp continuous_subtype_val
+  have hg_cont_on : ContinuousOn g (f '' K) := hg_cont.continuousOn
+  obtain ⟨y_min, hy_min_in, hmin⟩ :=
+    h_compact_iso.exists_isMinOn hg_cont_on h_img_ne
+  obtain ⟨y_max, hy_max_in, hmax⟩ :=
+    h_compact_iso.exists_isMaxOn hg_cont_on h_img_ne
+  rcases hy_min_in with ⟨x_min, hx_minK, rfl⟩
+  rcases hy_max_in with ⟨x_max, hx_maxK, rfl⟩
+  refine ⟨⟨x_min, hx_minK⟩, ⟨x_max, hx_maxK⟩, ?_⟩
+  intro x
+  have hx_img : f x ∈ f '' K := ⟨x, x.property, rfl⟩
+  have h1 : g ⟨f x_min, ?proof⟩ ≤ g ⟨f x, hx_img⟩ := by
+    have h1' : g ⟨f x_min, hy_min_in⟩ ≤ g ⟨f x, hx_img⟩ :=
+      hmin hx_img
+    simpa using h1'
+  have h2 : g ⟨f x, hx_img⟩ ≤ g ⟨f x_max, ?proof⟩ := by
+    have h2' : g ⟨f x, hx_img⟩ ≤ g ⟨f x_max, hy_max_in⟩ :=
+      hmax hx_img
+    simpa using h2'
   sorry
+-/
