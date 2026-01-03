@@ -2,7 +2,9 @@ import Mathlib.Tactic
 import TopologyInLeanProject6Compactness.Definitions.TopologicalSpaces
 import TopologyInLeanProject6Compactness.Definitions.MetricSpaces
 
-open Course
+namespace Course
+open scoped Course
+
 namespace MyFilter
 
 structure Filter (X : Type*) where
@@ -332,3 +334,4 @@ theorem Cont_convergence [Topology X] [Topology Y] (f : X → Y)
       exact g.1.1
 
 end MyFilter
+end Course

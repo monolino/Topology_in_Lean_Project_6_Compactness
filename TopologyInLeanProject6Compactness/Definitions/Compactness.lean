@@ -4,7 +4,9 @@ import TopologyInLeanProject6Compactness.Definitions.ContinuousFunctions
 import TopologyInLeanProject6Compactness.Definitions.Filters
 import TopologyInLeanProject6Compactness.Definitions.NewSpaces
 
-open Course
+namespace Course
+
+open scoped Course
 
 universe u
 
@@ -317,8 +319,6 @@ theorem filterCompact_iff_Compact (X : Type u) [Topology X] :
     apply hU.2
     exact hc2
 
-open Constructions
-
 /- Tychonov's theorem -/
 theorem filterCompact_iProduct {I : Type u} (Xs : I → Type u) (TXs : (i : I) → Topology (Xs i)) :
   (∀ i, @filterCompact (Xs i) (TXs i)) →
@@ -466,3 +466,171 @@ theorem Compact_Closed_of_Compact {W : Type u} [Topology W]
   sorry
 
 end AltAttempt
+
+def box {n : ℕ} (a b : Rn n) : Set (Rn n) := { x | ∀ i, a i ≤ x i ∧ x i ≤ b i }
+
+lemma Compact_def {X : Type u} [Topology X] (K : Set X) : Compact K ↔
+    ∀ (C : openCover K), ∃ (F : openCover K), F.Cover.Finite ∧ subCover F C := by
+  rfl
+
+lemma exists_box_of_bounded {n : ℕ} {K : Set (Rn n)} :
+  Bounded n K →  ∃ a b : Rn n, K ⊆ box a b := by
+  intro hB
+  rcases hB with ⟨r, hr, x₀, hdist⟩
+  let a : Rn n := fun i => x₀ i - r
+  let b : Rn n := fun i => x₀ i + r
+  refine ⟨a, b, ?_⟩
+  intro x hx i
+  have hxball : dist x x₀ < r := hdist x hx
+  have hcoord : |x i - x₀ i| ≤ dist x x₀ := by
+    simpa [dist_eq_norm] using norm_le_pi_norm (i := i) (x - x₀)
+  have hlt : |x i - x₀ i| < r :=
+    lt_of_le_of_lt hcoord hxball
+  constructor
+  case right =>
+    have hx_lt : x i - x₀ i < r := by
+      exact (abs_lt.mp hlt).2
+    have : x i < x₀ i + r := by linarith
+    exact le_of_lt this
+  case left =>
+    have hx_gt : -r < x i - x₀ i := by
+      exact (abs_lt.mp hlt).1
+    have : x₀ i - r < x i := by linarith
+    exact le_of_lt this
+
+/-- If `L` is compact in the `openCover` sense, and `K` is a closed subset of `L`,
+then `K` is compact. -/
+lemma Closed.compact_of_subset {K L : Set X}
+    (hK_closed : Closed K) (hKL : K ⊆ L) (hL_compact : Compact L) : Compact K := by
+  intro C
+  classical
+  let D : openCover L :=
+  { Cover      := C.Cover ∪ {Kᶜ}
+    Open_cover := by
+      intro s hs
+      rcases hs with hs | hs
+      case inl =>
+        exact C.Open_cover s hs
+      case inr =>
+        have : s = Kᶜ := by
+          simpa [Set.mem_singleton_iff] using hs
+        subst this
+        simpa [Closed] using hK_closed
+    Is_cover   := by
+      intro x hxL
+      by_cases hxK : x ∈ K
+      case pos =>
+        have hxUnionC : x ∈ ⋃₀ C.Cover := C.Is_cover hxK
+        apply Set.mem_sUnion.mpr
+        rcases Set.mem_sUnion.mp hxUnionC with ⟨s, hsC, hxs⟩
+        refine ⟨s, ?_, hxs⟩
+        exact Or.inl hsC
+      case neg =>
+        apply Set.mem_sUnion.mpr
+        refine ⟨Kᶜ, ?_, ?_⟩
+        case refine_1 =>
+          exact Or.inr (by simp)
+        case refine_2 =>
+          simpa [Set.mem_compl] using hxK
+  }
+  obtain ⟨F, hF_fin, hF_sub⟩ := hL_compact D
+  let G : openCover K :=
+  { Cover      := F.Cover \ {Kᶜ}
+    Open_cover := by
+      intro s hs
+      exact F.Open_cover s hs.1
+    Is_cover   := by
+      intro x hxK
+      have hxL : x ∈ L := hKL hxK
+      have coverF : L ⊆ ⋃₀ F.Cover := F.Is_cover
+      have hxUnionF : x ∈ ⋃₀ F.Cover := coverF hxL
+      rcases Set.mem_sUnion.mp hxUnionF with ⟨s, hsF, hxs⟩
+      have hsD : s ∈ D.Cover := hF_sub hsF
+      have hsNotKc : s ≠ Kᶜ := by
+        intro h
+        subst h
+        have : x ∈ Kᶜ := hxs
+        exact this (by exact hxK)
+      have hsG : s ∈ F.Cover \ {Kᶜ} := by
+        refine ⟨hsF, ?_⟩
+        intro hsKc
+        have : s = Kᶜ := by
+          simpa [Set.mem_singleton_iff] using hsKc
+        exact hsNotKc this
+      apply Set.mem_sUnion.mpr
+      exact ⟨s, hsG, hxs⟩
+  }
+  refine ⟨G, ?_, ?_⟩
+  case refine_1 =>
+    have hSub : G.Cover ⊆ F.Cover := by
+      intro s hs
+      exact hs.1
+    exact Set.Finite.subset hF_fin hSub
+  case refine_2 =>
+    intro s hsG
+    have hsF : s ∈ F.Cover := hsG.1
+    have hsD : s ∈ D.Cover := hF_sub hsF
+    change s ∈ C.Cover ∪ {Kᶜ} at hsD
+    rcases hsD with hsC | hsKc
+    case inl =>
+      exact hsC
+    case inr =>
+      have : s = Kᶜ := by
+        simpa [Set.mem_singleton_iff] using hsKc
+      have : s ≠ Kᶜ := hsG.2
+      exact (this ‹s = Kᶜ›).elim
+
+lemma IsCompact.toCompact {X : Type u} [TopologicalSpace X] [Topology X]
+  {K : Set X} (hK : IsCompact K) : Compact K := by
+  sorry
+  /- classical
+  intro C
+  have h' :
+      ∀ (U : Set (Set X)),
+        (∀ s ∈ U, IsOpen s) →
+        K ⊆ ⋃₀ U →
+        ∃ V ⊆ U, V.Finite ∧ K ⊆ ⋃₀ V :=
+    (isCompact_iff_finite_subcover).mp hK
+  have hC' :
+      ∃ V ⊆ C.Cover, V.Finite ∧ K ⊆ ⋃₀ V :=
+    h' C.Cover
+      (by
+        intro s hs
+        simpa [Open] using C.Open_cover s hs)
+      C.Is_cover
+  rcases hC' with ⟨V, hVsub, hVfin, hVK⟩
+  let F : openCover K :=
+  { Cover      := V
+    Open_cover := by
+      intro s hs
+      have hsC : s ∈ C.Cover := hVsub hs
+      simpa [Open] using C.Open_cover s hsC
+    Is_cover   := hVK }
+  refine ⟨F, hVfin, ?_⟩
+  intro s hs
+  exact hVsub hs -/
+
+lemma hBoxCompact {n : ℕ} (a b : Rn n) : Compact (box a b) := by
+  classical
+  have h_eq :
+      box a b =
+        Set.univ.pi (fun i : Fin n => Set.Icc (a i) (b i)) := by
+    ext x; constructor
+    case h.mp =>
+      intro hx i hi
+      specialize hx i
+      exact hx
+    case h.mpr =>
+      intro hx i
+      have hx' : x i ∈ Set.Icc (a i) (b i) := hx i (by trivial)
+      exact hx'
+  have h_isCompact_pi :
+      IsCompact (Set.univ.pi (fun i : Fin n => Set.Icc (a i) (b i))) := by
+    have h_coord : ∀ i : Fin n, IsCompact (Set.Icc (a i) (b i)) := fun i =>
+      isCompact_Icc
+    simpa using isCompact_univ_pi h_coord
+  have h_isCompact : IsCompact (box a b) := by
+    simpa [h_eq] using h_isCompact_pi
+  exact (IsCompact.toCompact h_isCompact)
+
+end Course

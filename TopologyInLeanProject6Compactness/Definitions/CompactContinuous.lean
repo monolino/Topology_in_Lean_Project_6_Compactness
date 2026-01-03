@@ -1,19 +1,27 @@
-import Mathlib.Tactic
-import TopologyInLeanProject6Compactness.HeineBorel
-import TopologyInLeanProject6Compactness.Definitions.NewSpaces
+import TopologyInLeanProject6Compactness.Definitions.TopologicalSpaces
 import TopologyInLeanProject6Compactness.Definitions.Compactness
-import TopologyInLeanProject6Compactness.Definitions.CompactContinuous
+import TopologyInLeanProject6Compactness.Definitions.ContinuousFunctions
 
+
+namespace Course
+
+open Set
 open scoped Course
 open Course
 
-variable (n : ℕ)
+universe u v w
+
+variable {X : Type u} {Y : Type v} {Z : Type w}
+variable [Topology X] [Topology Y] [Topology Z]
+
+
 
 @[simp]
 def ContOn {X : Type u} {Y : Type v}
   [Topology X] [Topology Y]
   (f : X → Y) (K : Set X) : Prop :=
   ∀ s, Open s → Open (K ∩ f ⁻¹' s)
+
 
 lemma Compact.image_on {X Y} [Topology X] [Topology Y]
     {K : Set X} (hK : Compact K)
@@ -66,46 +74,4 @@ lemma Compact.image_on {X Y} [Topology X] [Topology Y]
       rcases hV with ⟨S, hS_in_F, V', hV'_in_C, hS_eq, rfl⟩
       exact hV'_in_C
 
-theorem ExtremeValueTheorem (K : Set (Rn n)) (hK : Compact K) (f : (Rn n) → (Rn 1))
-  (f_cont : ContOn f K) :
-  ∃ x_min x_max : K,  ∀ x : K,
-  f x_min ≤ f x ∧ f x ≤ f x_max :=
-  have hfKCompact : Compact (f '' K) := Compact.image_on hK f_cont
-  have h_C_B : Closed (f '' K) ∧ Bounded 1 (f '' K) :=
-    (HeineBorel (n := 1) (K := f '' K)).mp hfKCompact
-  have h_closed : Closed (f '' K) := h_C_B.1
-  have h_bdd    : Bounded 1 (f '' K) := h_C_B.2
-  have h_closed_iso : IsClosed (f '' K) := by
-    sorry
-  have h_bdd_iso : Bornology.IsBounded (f '' K) := by
-    sorry
-  have h_compact_iso : Compact (f '' K) :=
-    sorry --(isCompact_iff_isClosed_bounded).2 ⟨h_closed_iso, h_bdd_iso⟩
-  have h_img_ne : (f '' K).Nonempty := by
-    rcases hK_ne with ⟨x0, hx0K⟩
-    exact ⟨f x0, ⟨x0, hx0K, rfl⟩⟩
-  let g : f '' K → ℝ := fun y => (y : Rn 1) 0
-  have hg_cont : Continuous g := by
-    have h_coord : Continuous fun x : Rn 1 => x 0 := by
-      simpa using (continuous_apply 0 : Continuous fun x : Rn 1 => x 0)
-    exact h_coord.comp continuous_subtype_val
-  have hg_cont_on : ContinuousOn g (f '' K) := hg_cont.continuousOn
-  obtain ⟨y_min, hy_min_in, hmin⟩ :=
-    h_compact_iso.exists_isMinOn hg_cont_on h_img_ne
-  obtain ⟨y_max, hy_max_in, hmax⟩ :=
-    h_compact_iso.exists_isMaxOn hg_cont_on h_img_ne
-  rcases hy_min_in with ⟨x_min, hx_minK, rfl⟩
-  rcases hy_max_in with ⟨x_max, hx_maxK, rfl⟩
-  refine ⟨⟨x_min, hx_minK⟩, ⟨x_max, hx_maxK⟩, ?_⟩
-  intro x
-  have hx_img : f x ∈ f '' K := ⟨x, x.property, rfl⟩
-  have h1 : g ⟨f x_min, ?proof⟩ ≤ g ⟨f x, hx_img⟩ := by
-    have h1' : g ⟨f x_min, hy_min_in⟩ ≤ g ⟨f x, hx_img⟩ :=
-      hmin hx_img
-    simpa using h1'
-  have h2 : g ⟨f x, hx_img⟩ ≤ g ⟨f x_max, ?proof⟩ := by
-    have h2' : g ⟨f x, hx_img⟩ ≤ g ⟨f x_max, hy_max_in⟩ :=
-      hmax hx_img
-    simpa using h2'
-  sorry
--/
+end Course

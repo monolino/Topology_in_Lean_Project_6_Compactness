@@ -1,6 +1,7 @@
 import Mathlib.Tactic
 
 namespace Course
+open scoped Course
 open Set
 
 universe u v

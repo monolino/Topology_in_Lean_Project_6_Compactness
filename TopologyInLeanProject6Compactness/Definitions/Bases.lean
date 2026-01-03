@@ -2,9 +2,11 @@ import Mathlib.Tactic
 import TopologyInLeanProject6Compactness.Definitions.TopologicalSpaces
 import TopologyInLeanProject6Compactness.Definitions.ContinuousFunctions
 
+namespace Course
+
 universe u v
 open Set
-open Course
+open scoped Course
 
 class Basis (X : Type u) : Type u where
   Basics : Set (Set X)
@@ -126,3 +128,5 @@ theorem Cont_Basics (f : X → Y) : Cont f ↔ ∀ b ∈ BY.Basics, Open (f ⁻�
     intro V hV
     apply hC1 at hV
     exact h V hV
+
+end Course
