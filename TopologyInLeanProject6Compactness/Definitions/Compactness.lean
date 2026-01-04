@@ -633,7 +633,7 @@ lemma hBoxCompact {n : ℕ} (a b : Rn n) : Compact (box a b) := by
     simpa [h_eq] using h_isCompact_pi
   exact (IsCompact.toCompact h_isCompact)
 
-  lemma closed_bddBelow_has_min {K : Set ℝ}
+lemma closed_bddBelow_has_min {K : Set ℝ}
   (h_closed : Closed K)
   (h_nonempty : K.Nonempty)
   (h_bdd : BoundedBelow K) :
