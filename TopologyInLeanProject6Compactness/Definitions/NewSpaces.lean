@@ -1,6 +1,7 @@
 import Mathlib.Tactic
 import TopologyInLeanProject6Compactness.Definitions.TopologicalSpaces
 import TopologyInLeanProject6Compactness.Definitions.Bases
+import TopologyInLeanProject6Compactness.Definitions.MetricSpaces
 
 /-
 Let Top(X,Y) := {f : X → Y | f continuous} denote the set of continuous maps from X to Y.
@@ -283,5 +284,17 @@ instance coproductTopology (X : Type u) [TX : Topology X] (Y : Type u) [TY : Top
 instance Coproduct_coproductTopology (X : Type u) [TX : Topology X] (Y : Type u) [TY : Topology Y] : CoproductSpace X Y where
   TC := coproductTopology X Y
   char_Coproduct := by sorry
+
+lemma dist_eq_abs_coord (x x0 : Rn 1) :
+  dist x x0 = |coord x - coord x0| := by
+  simp [dist_eq_norm, coord, sub_eq_add_neg]
+  sorry
+
+instance : LE (Rn 1) :=
+  ⟨fun u v => coord u ≤ coord v⟩
+
+lemma le_iff_coord_le (u v : Rn 1) :
+  u ≤ v ↔ coord u ≤ coord v :=
+Iff.rfl
 
 end Course

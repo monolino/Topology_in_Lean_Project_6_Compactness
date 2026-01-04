@@ -10,49 +10,6 @@ open Course
 
 variable (n : ℕ)
 
-def BoundedBelow (T : Set ℝ) : Prop :=
-  ∃ m : ℝ, ∀ y ∈ T, m ≤ y
-
-def BoundedAbove (T : Set ℝ) : Prop :=
-  ∃ M : ℝ, ∀ y ∈ T, y ≤ M
-
-lemma dist_eq_abs_coord (x x0 : Rn 1) :
-  dist x x0 = |coord x - coord x0| := by
-  simp [dist_eq_norm, coord, sub_eq_add_neg]
-  sorry
-
-lemma closed_bddBelow_has_min {K : Set ℝ}
-  (h_closed : Closed K)
-  (h_nonempty : K.Nonempty)
-  (h_bdd : BoundedBelow K) :
-  ∃ m ∈ K, ∀ y ∈ K, m ≤ y := by
-  let m := sInf K
-  have h_le : ∀ y ∈ K, m ≤ y := by
-    sorry
-  have hm_mem : m ∈ K := by
-    sorry
-  exact ⟨m, hm_mem, h_le⟩
-
-lemma closed_bddAbove_has_max {K : Set ℝ}
-  (h_closed : Closed K)
-  (h_nonempty : K.Nonempty)
-  (h_bdd : BoundedAbove K) :
-  ∃ M ∈ K, ∀ y ∈ K, y ≤ M := by
-  rcases h_bdd with ⟨M0, hM0⟩
-  let M := sSup K
-  sorry
-
-lemma compact_isClosed {S : Set ℝ} :
-  Compact S → Closed S := sorry
-
-instance : LE (Rn 1) :=
-  ⟨fun u v => coord u ≤ coord v⟩
-
-lemma le_iff_coord_le (u v : Rn 1) :
-  u ≤ v ↔ coord u ≤ coord v :=
-Iff.rfl
-
-
 theorem ExtremeValueTheorem (K : Set (Rn n)) (hK : Compact K)
   (hKnonempty : K.Nonempty) (f : (Rn n) → (Rn 1))
   (f_cont : ContOn f K) :

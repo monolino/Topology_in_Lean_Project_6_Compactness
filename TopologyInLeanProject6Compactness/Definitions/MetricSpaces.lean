@@ -167,6 +167,12 @@ lemma Coord_cont : Cont coord := by
 
 def Bounded (K : Set (Rn n)) : Prop := ∃ (r : ℝ) (hr : r > 0) (x₀ : Rn n), ∀ x ∈ K, dist x x₀ < r
 
+def BoundedBelow (T : Set ℝ) : Prop :=
+  ∃ m : ℝ, ∀ y ∈ T, m ≤ y
+
+def BoundedAbove (T : Set ℝ) : Prop :=
+  ∃ M : ℝ, ∀ y ∈ T, y ≤ M
+
 lemma eq_of_mem_ball_of_mem_ball {x y : Rn n} {r : ℝ}
     (hx : x ∈ Metric.ball y r) (hy : y ∈ Metric.ball x r)
     (h_equal : Metric.ball x r = Metric.ball y r ) (hr : 0 < r) :

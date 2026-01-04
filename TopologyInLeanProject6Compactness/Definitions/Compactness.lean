@@ -3,7 +3,7 @@ import TopologyInLeanProject6Compactness.Definitions.TopologicalSpaces
 import TopologyInLeanProject6Compactness.Definitions.ContinuousFunctions
 import TopologyInLeanProject6Compactness.Definitions.Filters
 import TopologyInLeanProject6Compactness.Definitions.NewSpaces
-
+import TopologyInLeanProject6Compactness.Definitions.MetricSpaces
 namespace Course
 
 open scoped Course
@@ -632,5 +632,29 @@ lemma hBoxCompact {n : ℕ} (a b : Rn n) : Compact (box a b) := by
   have h_isCompact : IsCompact (box a b) := by
     simpa [h_eq] using h_isCompact_pi
   exact (IsCompact.toCompact h_isCompact)
+
+  lemma closed_bddBelow_has_min {K : Set ℝ}
+  (h_closed : Closed K)
+  (h_nonempty : K.Nonempty)
+  (h_bdd : BoundedBelow K) :
+  ∃ m ∈ K, ∀ y ∈ K, m ≤ y := by
+  let m := sInf K
+  have h_le : ∀ y ∈ K, m ≤ y := by
+    sorry
+  have hm_mem : m ∈ K := by
+    sorry
+  exact ⟨m, hm_mem, h_le⟩
+
+lemma closed_bddAbove_has_max {K : Set ℝ}
+  (h_closed : Closed K)
+  (h_nonempty : K.Nonempty)
+  (h_bdd : BoundedAbove K) :
+  ∃ M ∈ K, ∀ y ∈ K, y ≤ M := by
+  rcases h_bdd with ⟨M0, hM0⟩
+  let M := sSup K
+  sorry
+
+lemma compact_isClosed {S : Set ℝ} :
+  Compact S → Closed S := sorry
 
 end Course
