@@ -640,9 +640,42 @@ lemma hBoxCompact {n : ℕ} (a b : Rn n) : Compact (box a b) := by
   ∃ m ∈ K, ∀ y ∈ K, m ≤ y := by
   let m := sInf K
   have h_le : ∀ y ∈ K, m ≤ y := by
-    sorry
+    intro y hy
+    have hm_le : sInf K ≤ y := csInf_le h_bdd hy
+    simpa [m] using hm_le
+  have h_approx : ∀ ε > 0, ∃ y ∈ K, |y - m| < ε := by
+    intro ε hε
+    have h_lt : sInf K < m + ε := by
+      simpa [m] using lt_add_of_pos_right (sInf K) hε
+    obtain ⟨y, hyK, hylt⟩ :=
+      exists_lt_of_csInf_lt h_nonempty h_lt
+    have hm_le_y : m ≤ y := h_le y hyK
+    have hdist : |y - m| < ε := by
+      have : y - m < ε := by
+        have := sub_lt_iff_lt_add'.mpr hylt
+        simpa using this
+      simpa [abs_of_nonneg (sub_nonneg.mpr hm_le_y)] using this
+    exact ⟨y, hyK, hdist⟩
   have hm_mem : m ∈ K := by
-    sorry
+    rw[Closed] at h_closed
+    by_contra hm
+    have hm_in : m ∈ Kᶜ := hm
+    rcases h_closed m hm_in with ⟨ε, hεpos, hball⟩
+    rcases hεpos with ⟨x₀, r, hrpos, rfl⟩
+    have hm_ball : |m - x₀| < r := hball.left
+    have hpos : r - |m - x₀| > 0 := sub_pos.mpr hm_ball
+    rcases h_approx (r - |m - x₀|) hpos with ⟨y, hyK, hy_dist⟩
+    have hy_ball : y ∈ Metric.ball x₀ r := by
+      have htri : |y - x₀| ≤ |y - m| + |m - x₀| := by
+        simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc] using abs_sub_le (y) (m) (x₀)
+      rw[Metric.ball, Set.mem_setOf]
+      have hsum_lt : |y - m| + |m - x₀| < r := by
+        have h1 : |y - m| + |m - x₀| < (r - |m - x₀|) + |m - x₀| := by
+          exact (add_lt_add_iff_right |m - x₀|).mpr hy_dist
+        simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc] using h1
+      exact lt_of_le_of_lt htri hsum_lt
+    have hyKc : y ∈ Kᶜ := hball.right hy_ball
+    exact hyKc hyK
   exact ⟨m, hm_mem, h_le⟩
 
 lemma closed_bddAbove_has_max {K : Set ℝ}
@@ -650,9 +683,43 @@ lemma closed_bddAbove_has_max {K : Set ℝ}
   (h_nonempty : K.Nonempty)
   (h_bdd : BoundedAbove K) :
   ∃ M ∈ K, ∀ y ∈ K, y ≤ M := by
-  rcases h_bdd with ⟨M0, hM0⟩
   let M := sSup K
-  sorry
+  have h_le : ∀ y ∈ K, y ≤ M := by
+    intro y hy
+    have := le_csSup h_bdd hy
+    simpa [M] using this
+  have h_approx : ∀ ε > 0, ∃ y ∈ K, |y - M| < ε := by
+    intro ε hε
+    have h_lt : M - ε < sSup K := sub_lt_self M hε
+    obtain ⟨y, hyK, hylt⟩ := exists_lt_of_lt_csSup h_nonempty h_lt
+    refine ⟨y, hyK, ?_⟩
+    have hMy_lt : M - y < ε := by
+      exact sub_lt_comm.mp hylt
+    have hy_le_M : y ≤ M := h_le y hyK
+    have hy_nonpos : y - M ≤ 0 := sub_nonpos.mpr hy_le_M
+    have : |y - M| = M - y := by
+      simp [abs_of_nonpos hy_nonpos]
+    simpa [this] using hMy_lt
+  have hM_mem : M ∈ K := by
+    rw [Closed] at h_closed
+    by_contra hM
+    have hM_in : M ∈ Kᶜ := hM
+    rcases h_closed M hM_in with ⟨U, hUopen, hMU, hUsubset⟩
+    rcases hUopen with ⟨x₀, r, hrpos, rfl⟩
+    have hM_ball : |M - x₀| < r := hMU
+    have hpos : r - |M - x₀| > 0 := sub_pos.mpr hM_ball
+    rcases h_approx (r - |M - x₀|) hpos with ⟨y, hyK, hy_dist⟩
+    have hy_ball : y ∈ Metric.ball x₀ r := by
+      have htri : |y - x₀| ≤ |y - M| + |M - x₀| := by
+        simpa [sub_eq_add_neg] using abs_sub_le y M x₀
+      have hsum_lt : |y - M| + |M - x₀| < r := by
+        have h1 : |y - M| + |M - x₀| < (r - |M - x₀|) + |M - x₀| := by
+          exact (add_lt_add_iff_right |M - x₀|).mpr hy_dist
+        simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc] using h1
+      exact lt_of_le_of_lt htri hsum_lt
+    have hyKc : y ∈ Kᶜ := hUsubset hy_ball
+    exact hyKc hyK
+  exact ⟨M, hM_mem, h_le⟩
 
 lemma compact_isClosed {S : Set ℝ} :
   Compact S → Closed S := sorry
