@@ -722,6 +722,40 @@ lemma closed_bddAbove_has_max {K : Set ℝ}
   exact ⟨M, hM_mem, h_le⟩
 
 lemma compact_isClosed {S : Set ℝ} :
-  Compact S → Closed S := sorry
+  Compact S → Closed S := by
+    intro hS
+    unfold Closed
+    intro x hxS
+    by_contra h
+    have h_intersects : ∀ ε > 0, ∃ y ∈ S, |y - x| < ε := by
+      intro ε hε
+      have hx_ball : x ∈ Metric.ball x ε := by
+        simpa [Metric.mem_ball, dist_self] using hε
+      have h_not_subset : ¬ (Metric.ball x ε ⊆ Sᶜ) := by
+        intro hsubset
+        apply h
+        refine ⟨Metric.ball x ε, ?basis, ?hx, hsubset⟩
+        · exact ⟨x, ε, rfl⟩
+        · have : dist x x < ε := by simpa using hε
+          simpa [Metric.mem_ball] using this
+      have h_exists : ∃ y, y ∈ Metric.ball x ε ∧ y ∉ Sᶜ := by
+        by_contra hforall
+        apply h_not_subset
+        intro y hy_ball
+        have : y ∈ Sᶜ := by
+          by_contra hySc
+          apply hforall
+          exact ⟨y, hy_ball, hySc⟩
+        exact this
+      rcases h_exists with ⟨y, hy_ball, hy_not_Sc⟩
+      have hyS : y ∈ S := by simpa using hy_not_Sc
+      have hy_dist' : dist y x < ε := by
+        have : dist x y < ε := by
+          exact Metric.mem_ball'.mp hy_ball
+        simpa [dist_comm] using this
+      have hy_dist : |y - x| < ε := by
+        simpa [Real.dist_eq, abs_sub_comm] using hy_dist'
+      exact ⟨y, hyS, hy_dist⟩
+    sorry
 
 end Course
