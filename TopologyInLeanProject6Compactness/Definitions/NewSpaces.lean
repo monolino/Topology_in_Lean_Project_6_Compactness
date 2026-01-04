@@ -297,4 +297,34 @@ lemma le_iff_coord_le (u v : Rn 1) :
   u ≤ v ↔ coord u ≤ coord v :=
 Iff.rfl
 
+lemma Coord_cont : Cont coord := by
+  rw[Cont]
+  intro s hs x hx
+  rcases hs (coord x) hx with ⟨ε, hεpos, hball⟩
+  rcases hεpos with ⟨x₀, r, rfl⟩
+  let bx : Set (Rn 1) := {y | ‖y - x‖ < r}
+  have hbx_basis : bx ∈ Basis.Basics := by refine ⟨x, r, rfl⟩
+  have hx_in_bx : x ∈ bx := by
+    simp [bx]
+    have hrpos : 0 < r := by
+      have : dist (coord x) x₀ < r := by
+        simpa [Metric.mem_ball] using hball.left
+      have hdist_nonneg : 0 ≤ dist (coord x) x₀ := dist_nonneg
+      exact lt_of_le_of_lt hdist_nonneg this
+    exact hrpos
+  have hbx_subset : bx ⊆ coord ⁻¹' s := by
+    intro y hy
+    have hy' : |coord y - coord x| < r := by
+      rw[← dist_eq_abs_coord]
+      rw [@SeminormedRing.dist_eq]
+      simpa [bx, Real.norm_eq_abs, sub_eq_add_neg] using hy
+    have hy_ball : coord y ∈ Metric.ball x₀ r := by
+      have : |coord y - x₀| < r := by
+        have hx_dist : |coord x - x₀| < r := by
+          simpa [Metric.mem_ball] using hball.left
+        sorry
+      sorry
+    exact hball.right hy_ball
+  exact ⟨bx, hbx_basis, hx_in_bx, hbx_subset⟩
+
 end Course

@@ -159,12 +159,6 @@ abbrev Rn (n : ℕ) : Type := Fin n → ℝ
 
 def coord : Rn 1 → ℝ := fun x => x 0
 
-lemma Coord_cont : Cont coord := by
-  rw[Cont]
-  intro s hs
-  intro x hx
-  sorry
-
 def Bounded (K : Set (Rn n)) : Prop := ∃ (r : ℝ) (hr : r > 0) (x₀ : Rn n), ∀ x ∈ K, dist x x₀ < r
 
 def BoundedBelow (T : Set ℝ) : Prop :=
