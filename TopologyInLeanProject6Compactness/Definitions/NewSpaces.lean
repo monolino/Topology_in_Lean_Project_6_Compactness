@@ -285,10 +285,10 @@ instance Coproduct_coproductTopology (X : Type u) [TX : Topology X] (Y : Type u)
   TC := coproductTopology X Y
   char_Coproduct := by sorry
 
-lemma dist_eq_abs_coord (x x0 : Rn 1) :
-  dist x x0 = |coord x - coord x0| := by
+lemma dist_eq_abs_coord (x x₀ : Rn 1) :
+  dist x x₀ = |coord x - coord x₀| := by
   simp [dist_eq_norm, coord, sub_eq_add_neg]
-  sorry
+  simp [norm]
 
 instance : LE (Rn 1) :=
   ⟨fun u v => coord u ≤ coord v⟩
