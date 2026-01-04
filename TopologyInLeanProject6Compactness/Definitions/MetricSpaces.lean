@@ -155,7 +155,9 @@ theorem Hausdorff_metricTopology : @Hausdorff X metricTopology := by
 
 variable (n : ℕ)
 
-abbrev Rn (n : ℕ) : Type := (Fin n → ℝ)
+abbrev Rn (n : ℕ) : Type := Fin n → ℝ
+
+def coord : Rn 1 → ℝ := fun x => x 0
 
 def Bounded (K : Set (Rn n)) : Prop := ∃ (r : ℝ) (hr : r > 0) (x₀ : Rn n), ∀ x ∈ K, dist x x₀ < r
 
