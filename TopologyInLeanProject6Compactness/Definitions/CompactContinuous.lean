@@ -22,6 +22,8 @@ def ContOn {X : Type u} {Y : Type v}
   (f : X → Y) (K : Set X) : Prop :=
   ∀ s, Open s → Open (K ∩ f ⁻¹' s)
 
+lemma Cont.contOn {f : X → Y} (hf : Cont f) (K : Set X) :
+  ContOn f K := sorry
 
 lemma Compact.image_on {X Y} [Topology X] [Topology Y]
     {K : Set X} (hK : Compact K)

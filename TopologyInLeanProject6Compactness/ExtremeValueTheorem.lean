@@ -42,6 +42,9 @@ lemma closed_bddAbove_has_max {K : Set ℝ}
   let M := sSup K
   sorry
 
+lemma compact_isClosed {S : Set ℝ} :
+  Compact S → Closed S := sorry
+
 instance : LE (Rn 1) :=
   ⟨fun u v => coord u ≤ coord v⟩
 
@@ -50,7 +53,8 @@ lemma le_iff_coord_le (u v : Rn 1) :
 Iff.rfl
 
 
-theorem ExtremeValueTheorem (K : Set (Rn n)) (hK : Compact K) (hKnonempty : K.Nonempty) (f : (Rn n) → (Rn 1))
+theorem ExtremeValueTheorem (K : Set (Rn n)) (hK : Compact K)
+  (hKnonempty : K.Nonempty) (f : (Rn n) → (Rn 1))
   (f_cont : ContOn f K) :
   ∃ x_min x_max : K,  ∀ x : K,
   f x_min ≤ f x ∧ f x ≤ f x_max := by
@@ -105,7 +109,14 @@ theorem ExtremeValueTheorem (K : Set (Rn n)) (hK : Compact K) (hKnonempty : K.No
     refine ⟨coord (f x₀), ?_⟩
     refine ⟨f x₀, ?_, rfl⟩
     exact ⟨x₀, hx₀K, rfl⟩
-  have hT_closed : Closed T := sorry
+  have hT_closed : Closed T := by
+    rw[Closed]
+    rw[Closed] at h_closed
+    have hcoord_cont : ContOn coord (f '' K) := Cont.contOn Coord_cont (f '' K)
+    have hT_compact : Compact T := by
+      have h := Compact.image_on (K := f '' K) (f := coord) hfKCompact hcoord_cont
+      simpa [T] using h
+    exact compact_isClosed hT_compact
   have hT_below : BoundedBelow T := hfK_bbd_below
   have hT_above : BoundedAbove T := hfK_bbd_above
   obtain ⟨m, hmT, hm_le⟩ := closed_bddBelow_has_min hT_closed hT_nonempty hT_below --Minimum
